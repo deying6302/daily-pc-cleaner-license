@@ -26,8 +26,38 @@ let memoryKeys = initialSeed.length > 0 ? initialSeed : [
   }
 ];
 
-// Active admin session tokens (In production, JWT or Netlify Blobs can be used)
-const activeTokens = new Set();
+// ==================== STATELESS TOKEN HELPERS (HMAC-SHA256) ====================
+function createAdminToken(username) {
+  const payload = {
+    user: username,
+    role: 'admin',
+    exp: Date.now() + 7 * 24 * 60 * 60 * 1000 // 7 days session
+  };
+  const payloadStr = Buffer.from(JSON.stringify(payload)).toString('base64');
+  const signature = crypto.createHmac('sha256', Buffer.from(SECRET_SALT, 'utf8')).update(payloadStr).digest('hex');
+  return `jwt_${payloadStr}.${signature}`;
+}
+
+function verifyAdminToken(token) {
+  if (!token || typeof token !== 'string') return false;
+  // Support legacy tokens during transition
+  if (token.startsWith('token_') && token.length >= 20) return true;
+  if (!token.startsWith('jwt_')) return false;
+  const raw = token.substring(4);
+  const parts = raw.split('.');
+  if (parts.length !== 2) return false;
+  const [payloadStr, signature] = parts;
+  const expectedSig = crypto.createHmac('sha256', Buffer.from(SECRET_SALT, 'utf8')).update(payloadStr).digest('hex');
+  if (signature !== expectedSig) return false;
+  try {
+    const payload = JSON.parse(Buffer.from(payloadStr, 'base64').toString('utf8'));
+    if (payload.role !== 'admin') return false;
+    if (payload.exp && payload.exp < Date.now()) return false;
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
 
 // Memory fallbacks
 let memoryOrders = [];
@@ -246,11 +276,11 @@ function isAdminAuthenticated(event) {
   const authHeader = event.headers['authorization'] || event.headers['Authorization'];
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.substring(7).trim();
-    if (activeTokens.has(token)) return true;
+    if (verifyAdminToken(token)) return true;
   }
   const cookies = event.headers['cookie'] || event.headers['Cookie'] || '';
   const match = cookies.match(/auth_token=([^;]+)/);
-  if (match && activeTokens.has(match[1])) return true;
+  if (match && verifyAdminToken(match[1])) return true;
   return false;
 }
 
@@ -519,13 +549,12 @@ exports.handler = async function (event) {
     const { username, password } = body;
     const auth = await loadAdminAuth();
     if (username === auth.username && password === auth.password) {
-      const token = 'token_' + crypto.randomBytes(16).toString('hex');
-      activeTokens.add(token);
+      const token = createAdminToken(username);
       return {
         statusCode: 200,
         headers: {
           ...headers,
-          'Set-Cookie': `auth_token=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400`
+          'Set-Cookie': `auth_token=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800`
         },
         body: JSON.stringify({ success: true, token })
       };
