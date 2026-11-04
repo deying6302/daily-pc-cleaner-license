@@ -109,10 +109,21 @@ async function getBlobsStore(name) {
     }
   }
   if (_blobsMod && typeof _blobsMod.getStore === 'function') {
+    const siteID = process.env.SITE_ID;
+    const token = process.env.NETLIFY_FUNCTIONS_TOKEN || process.env.NETLIFY_AUTH_TOKEN;
+    const opts = { name: storeName, consistency: 'strong' };
+    if (siteID && token) {
+      opts.siteID = siteID;
+      opts.token = token;
+    }
     try {
-      return _blobsMod.getStore({ name: storeName, consistency: 'strong' });
+      return _blobsMod.getStore(opts);
     } catch (e) {
-      return _blobsMod.getStore(storeName);
+      try {
+        return _blobsMod.getStore(storeName);
+      } catch (e2) {
+        return null;
+      }
     }
   }
   return null;
@@ -313,32 +324,21 @@ exports.handler = async function (event) {
       timestamp: new Date().toISOString(),
       nodeVersion: process.version,
       hasSiteId: !!process.env.SITE_ID,
-      hasBlobsContext: !!process.env.NETLIFY_BLOBS_CONTEXT,
-      envKeys: Object.keys(process.env).filter(k => k.includes('BLOB') || k.includes('SITE') || k.includes('NETLIFY')),
-      importError: null,
-      requireError: null,
+      hasToken: !!(process.env.NETLIFY_FUNCTIONS_TOKEN || process.env.NETLIFY_AUTH_TOKEN),
       storeStatus: null,
-      memoryKeysCount: memoryKeys.length,
-      memoryOrdersCount: memoryOrders.length
+      error: null
     };
     try {
-      const mod = await import('@netlify/blobs');
-      diag.importSuccess = !!mod;
-      diag.hasGetStore = !!(mod && typeof mod.getStore === 'function');
-      if (mod && mod.getStore) {
-        const store = mod.getStore('license-keys');
-        await store.setJSON('test_diag', { ok: true, now: Date.now() });
+      const store = await getBlobsStore('license-keys');
+      if (store) {
+        await store.setJSON('test_diag', { ok: true, time: Date.now() });
         const val = await store.get('test_diag', { type: 'json' });
-        diag.storeStatus = val && val.ok ? 'WORKING' : 'NULL_GET';
+        diag.storeStatus = val && val.ok ? 'WORKING_AND_PERSISTED' : 'VAL_EMPTY';
+      } else {
+        diag.storeStatus = 'STORE_NULL';
       }
     } catch (err) {
-      diag.importError = err.message || String(err);
-    }
-    try {
-      const modCjs = require('@netlify/blobs');
-      diag.requireSuccess = !!modCjs;
-    } catch (err2) {
-      diag.requireError = err2.message || String(err2);
+      diag.error = err.message || String(err);
     }
     return {
       statusCode: 200,
