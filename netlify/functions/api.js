@@ -352,7 +352,10 @@ export default async (req, context) => {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
   };
 
   if (req.method === 'OPTIONS') {
@@ -498,6 +501,32 @@ export default async (req, context) => {
       plan: record.PlanType,
       expires: record.ExpiresAt
     });
+  }
+
+  // ---------------- PUBLIC CLIENT API: /api/deactivate ----------------
+  if (path === '/api/deactivate' && method === 'POST') {
+    const keys = await loadKeys();
+    const key = (body.key || '').trim().toUpperCase();
+    const hwid = (body.hwid || '').trim();
+
+    if (!key || !hwid) {
+      return jsonResponse({ success: false, error: 'Thiếu key hoặc HWID!' }, 400);
+    }
+
+    const record = keys.find(k => k.Key.toUpperCase() === key);
+    if (!record) {
+      return jsonResponse({ success: false, error: 'Key không tồn tại!' }, 404);
+    }
+
+    if (record.ActivatedMachines) {
+      const before = record.ActivatedMachines.length;
+      record.ActivatedMachines = record.ActivatedMachines.filter(m => m.Hwid !== hwid);
+      if (record.ActivatedMachines.length !== before) {
+        await saveKeys(keys);
+      }
+    }
+
+    return jsonResponse({ success: true, message: 'Đã hủy kích hoạt máy thành công!' });
   }
 
   // ---------------- PUBLIC ORDERS & BANK APIs ----------------
@@ -737,6 +766,30 @@ export default async (req, context) => {
     const token = encryptString(raw);
 
     return jsonResponse({ success: true, offlineToken: token });
+    }
+
+    // POST /api/keys/remove-machine
+    if (path === '/api/keys/remove-machine' && method === 'POST') {
+      const key = (body.key || '').trim().toUpperCase();
+      const hwid = (body.hwid || '').trim();
+
+      if (!key || !hwid) {
+        return jsonResponse({ success: false, error: 'Thiếu key hoặc HWID!' }, 400);
+      }
+
+      const rec = keys.find(k => k.Key.toUpperCase() === key);
+      if (!rec) return jsonResponse({ success: false, error: 'Key không tồn tại!' }, 404);
+
+      if (!rec.ActivatedMachines) rec.ActivatedMachines = [];
+      const before = rec.ActivatedMachines.length;
+      rec.ActivatedMachines = rec.ActivatedMachines.filter(m => m.Hwid !== hwid);
+      await saveKeys(keys);
+
+      return jsonResponse({
+        success: true,
+        removed: before - rec.ActivatedMachines.length,
+        remainingCount: rec.ActivatedMachines.length
+      });
     }
   }
 

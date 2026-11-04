@@ -41,7 +41,12 @@
           class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer">
           <span>🔒</span> Đổi Mật Khẩu
         </button>
-        <button onclick="refreshAll()" title="Làm mới dữ liệu"
+        <div id="syncBadge" title="Hệ thống tự động đồng bộ thời gian thực mỗi 6s"
+          class="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          Đồng bộ tự động
+        </div>
+        <button onclick="refreshAll()" title="Làm mới dữ liệu ngay"
           class="p-2 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded-lg transition cursor-pointer">
           <span class="text-lg">🔄</span>
         </button>
@@ -134,6 +139,10 @@
         </div>
 
         <div class="flex items-center gap-2 w-full md:w-auto justify-end">
+          <button onclick="fetchKeys()" title="Tải lại danh sách mã Key"
+            class="px-3.5 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 text-sm font-semibold transition flex items-center gap-1.5 cursor-pointer">
+            <span>🔄</span> Tải Lại Key
+          </button>
           <button onclick="deleteAllKeys()" title="Xóa toàn bộ mã Key"
             class="px-3 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 text-sm font-semibold transition flex items-center gap-1 cursor-pointer">
             <span>🗑️</span> Xóa Tất Cả
@@ -637,7 +646,10 @@
     // ==================== FETCH KEYS ====================
     async function fetchKeys() {
       try {
-        const res = await fetch('/api/keys', { headers: getAuthHeaders() });
+        const res = await fetch(`/api/keys?_t=${Date.now()}`, {
+          headers: getAuthHeaders(),
+          cache: 'no-store'
+        });
         if (res.status === 401) { logout(); return; }
         const data = await res.json();
         if (data.success && Array.isArray(data.keys)) {
@@ -754,7 +766,10 @@
         tbody.innerHTML = '<tr><td colspan="8" class="py-12 text-center text-slate-400">Đang tải danh sách đơn hàng...</td></tr>';
       }
       try {
-        const res = await fetch('/api/orders', { headers: getAuthHeaders() });
+        const res = await fetch(`/api/orders?_t=${Date.now()}`, {
+          headers: getAuthHeaders(),
+          cache: 'no-store'
+        });
         const data = await res.json();
         if (data.success && Array.isArray(data.orders)) {
           allOrders = data.orders;
@@ -1144,14 +1159,41 @@ Website: https://daily-pc-cleaner.netlify.app/`;
         container.innerHTML = '<div class="text-sm text-slate-400 py-3 text-center">Chưa có máy tính nào kích hoạt mã Key này.</div>';
       } else {
         container.innerHTML = list.map((m, idx) => `
-          <div class="p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs">
-            <div class="font-bold text-slate-800">Máy #${idx + 1}: ${escapeHtml(m.MachineName || 'PC')}</div>
-            <div class="font-mono text-slate-600 mt-0.5">HWID: ${m.Hwid}</div>
-            <div class="text-slate-400 mt-1">Kích hoạt lúc: ${m.ActivatedAt}</div>
+          <div class="p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs flex items-center justify-between gap-3">
+            <div>
+              <div class="font-bold text-slate-800">Máy #${idx + 1}: ${escapeHtml(m.MachineName || 'PC')}</div>
+              <div class="font-mono text-slate-600 mt-0.5">HWID: ${m.Hwid}</div>
+              <div class="text-slate-400 mt-1">Kích hoạt lúc: ${m.ActivatedAt}</div>
+            </div>
+            <button onclick="removeMachine('${rec.Key}', '${m.Hwid}')"
+              class="px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 font-semibold text-xs transition cursor-pointer whitespace-nowrap"
+              title="Hủy kích hoạt máy này để giải phóng 1 slot bản quyền">
+              🗑️ Hủy máy
+            </button>
           </div>
         `).join('');
       }
       document.getElementById('machinesModal').classList.remove('hidden');
+    }
+
+    async function removeMachine(key, hwid) {
+      if (!confirm(`Xác nhận hủy kích hoạt máy HWID: ${hwid} khỏi mã bản quyền ${key}? Thao tác này sẽ giải phóng 1 lượt kích hoạt!`)) return;
+      try {
+        const res = await fetch('/api/keys/remove-machine', {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ key, hwid })
+        });
+        const data = await res.json();
+        if (data.success) {
+          await fetchKeys();
+          showMachines(key);
+        } else {
+          alert('Lỗi: ' + (data.error || ''));
+        }
+      } catch (e) {
+        alert('Lỗi kết nối: ' + e.message);
+      }
     }
     function closeMachinesModal() {
       document.getElementById('machinesModal').classList.add('hidden');
@@ -1208,6 +1250,30 @@ Website: https://daily-pc-cleaner.netlify.app/`;
       finally { btn.disabled = false; }
     }
 
+    // Auto-Sync Polling every 6 seconds and on window focus
+    let syncTimer = null;
+    function startAutoSync() {
+      if (syncTimer) clearInterval(syncTimer);
+      syncTimer = setInterval(() => {
+        if (!document.hidden) {
+          fetchKeys();
+          fetchOrders();
+        }
+      }, 6000);
+    }
+
+    window.addEventListener('focus', () => {
+      fetchKeys();
+      fetchOrders();
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        fetchKeys();
+        fetchOrders();
+      }
+    });
+
     // Init
     checkAuth().then(ok => {
       if (ok) {
@@ -1224,6 +1290,7 @@ Website: https://daily-pc-cleaner.netlify.app/`;
         fetchKeys();
         fetchOrders();
         loadBankConfig();
+        startAutoSync();
       }
     });
   </script>
