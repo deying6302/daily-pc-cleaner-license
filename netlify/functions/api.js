@@ -177,6 +177,41 @@ async function saveBankConfig(config) {
   } catch (e) { }
 }
 
+// ==================== ADMIN CREDENTIALS STORAGE ====================
+let memoryAdminAuth = {
+  username: process.env.ADMIN_USERNAME || 'admin',
+  password: process.env.ADMIN_PASSWORD || 'admin123'
+};
+
+async function loadAdminAuth() {
+  try {
+    const { getStore } = require('@netlify/blobs');
+    const store = getStore('license-keys');
+    const data = await store.get('admin_auth', { type: 'json' });
+    if (data && data.username && data.password) {
+      memoryAdminAuth = data;
+      return memoryAdminAuth;
+    }
+  } catch (e) { }
+
+  if (process.env.ADMIN_USERNAME && process.env.ADMIN_PASSWORD) {
+    memoryAdminAuth = {
+      username: process.env.ADMIN_USERNAME,
+      password: process.env.ADMIN_PASSWORD
+    };
+  }
+  return memoryAdminAuth;
+}
+
+async function saveAdminAuth(auth) {
+  memoryAdminAuth = auth;
+  try {
+    const { getStore } = require('@netlify/blobs');
+    const store = getStore('license-keys');
+    await store.setJSON('admin_auth', auth);
+  } catch (e) { }
+}
+
 // ==================== AUTH HELPER ====================
 function isAdminAuthenticated(event) {
   const authHeader = event.headers['authorization'] || event.headers['Authorization'];
@@ -419,7 +454,8 @@ exports.handler = async function (event) {
   // ---------------- ADMIN API: /api/login ----------------
   if (path === '/api/login' && event.httpMethod === 'POST') {
     const { username, password } = body;
-    if (username === DEFAULT_ADMIN_USER && password === DEFAULT_ADMIN_PASS) {
+    const auth = await loadAdminAuth();
+    if (username === auth.username && password === auth.password) {
       const token = 'token_' + crypto.randomBytes(16).toString('hex');
       activeTokens.add(token);
       return {
@@ -640,6 +676,24 @@ exports.handler = async function (event) {
     };
     await saveBankConfig(config);
     return { statusCode: 200, headers, body: JSON.stringify({ success: true, bank: config }) };
+  }
+
+  // POST /api/admin/change-password
+  if (path === '/api/admin/change-password' && event.httpMethod === 'POST') {
+    const { currentPassword, newUsername, newPassword } = body;
+    const auth = await loadAdminAuth();
+    if (currentPassword !== auth.password) {
+      return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Mật khẩu hiện tại không chính xác!' }) };
+    }
+    if (!newPassword || newPassword.length < 6) {
+      return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Mật khẩu mới phải có ít nhất 6 ký tự!' }) };
+    }
+    const updated = {
+      username: (newUsername || auth.username).trim(),
+      password: newPassword.trim()
+    };
+    await saveAdminAuth(updated);
+    return { statusCode: 200, headers, body: JSON.stringify({ success: true, message: 'Đã đổi mật khẩu thành công!' }) };
   }
 
   return { statusCode: 404, headers, body: JSON.stringify({ error: 'Endpoint không tồn tại' }) };
