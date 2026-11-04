@@ -65,27 +65,49 @@ function decryptString(encryptedBase64) {
   return dec.toString('utf8');
 }
 
+// ==================== BLOB STORE LOADER (ESM COMPATIBLE) ====================
+let _blobsMod = null;
+async function getBlobsStore(name) {
+  const storeName = name || 'license-keys';
+  if (!_blobsMod) {
+    try {
+      _blobsMod = await import('@netlify/blobs');
+    } catch (e1) {
+      try {
+        _blobsMod = require('@netlify/blobs');
+      } catch (e2) { }
+    }
+  }
+  if (_blobsMod && typeof _blobsMod.getStore === 'function') {
+    try {
+      return _blobsMod.getStore({ name: storeName, consistency: 'strong' });
+    } catch (e) {
+      return _blobsMod.getStore(storeName);
+    }
+  }
+  return null;
+}
+
 // ==================== DATABASE ABSTRACTION ====================
 async function loadKeys() {
   // 1. Try Netlify Blobs (Primary storage)
   try {
-    const { getStore } = require('@netlify/blobs');
-    const store = getStore('license-keys');
-    const data = await store.get('keys_db', { type: 'json' });
-    if (data && Array.isArray(data)) {
-      memoryKeys = data;
-      return memoryKeys;
-    } else {
-      // First time deployment on Netlify: seed initial database!
-      if (initialSeed && initialSeed.length > 0) {
-        memoryKeys = initialSeed;
-        await store.setJSON('keys_db', memoryKeys);
+    const store = await getBlobsStore('license-keys');
+    if (store) {
+      const data = await store.get('keys_db', { type: 'json' });
+      if (data && Array.isArray(data)) {
+        memoryKeys = data;
         return memoryKeys;
+      } else {
+        // First time deployment on Netlify: seed initial database!
+        if (initialSeed && initialSeed.length > 0) {
+          memoryKeys = initialSeed;
+          await store.setJSON('keys_db', memoryKeys);
+          return memoryKeys;
+        }
       }
     }
-  } catch (e) {
-    // Netlify Blobs not available in local test or unconfigured
-  }
+  } catch (e) { }
 
   // 2. Try Upstash Redis if configured
   if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
@@ -112,9 +134,10 @@ async function saveKeys(keys) {
 
   // 1. Save to Netlify Blobs
   try {
-    const { getStore } = require('@netlify/blobs');
-    const store = getStore('license-keys');
-    await store.setJSON('keys_db', keys);
+    const store = await getBlobsStore('license-keys');
+    if (store) {
+      await store.setJSON('keys_db', keys);
+    }
   } catch (e) { }
 
   // 2. Save to Upstash Redis if configured
@@ -135,12 +158,13 @@ async function saveKeys(keys) {
 // ==================== ORDERS & BANK STORAGE ====================
 async function loadOrders() {
   try {
-    const { getStore } = require('@netlify/blobs');
-    const store = getStore('license-keys');
-    const data = await store.get('orders_db', { type: 'json' });
-    if (data && Array.isArray(data)) {
-      memoryOrders = data;
-      return memoryOrders;
+    const store = await getBlobsStore('license-keys');
+    if (store) {
+      const data = await store.get('orders_db', { type: 'json' });
+      if (data && Array.isArray(data)) {
+        memoryOrders = data;
+        return memoryOrders;
+      }
     }
   } catch (e) { }
   return memoryOrders;
@@ -149,20 +173,22 @@ async function loadOrders() {
 async function saveOrders(orders) {
   memoryOrders = orders;
   try {
-    const { getStore } = require('@netlify/blobs');
-    const store = getStore('license-keys');
-    await store.setJSON('orders_db', orders);
+    const store = await getBlobsStore('license-keys');
+    if (store) {
+      await store.setJSON('orders_db', orders);
+    }
   } catch (e) { }
 }
 
 async function loadBankConfig() {
   try {
-    const { getStore } = require('@netlify/blobs');
-    const store = getStore('license-keys');
-    const data = await store.get('bank_config', { type: 'json' });
-    if (data && data.accountNo) {
-      memoryBankConfig = data;
-      return memoryBankConfig;
+    const store = await getBlobsStore('license-keys');
+    if (store) {
+      const data = await store.get('bank_config', { type: 'json' });
+      if (data && data.accountNo) {
+        memoryBankConfig = data;
+        return memoryBankConfig;
+      }
     }
   } catch (e) { }
   return memoryBankConfig;
@@ -171,9 +197,10 @@ async function loadBankConfig() {
 async function saveBankConfig(config) {
   memoryBankConfig = config;
   try {
-    const { getStore } = require('@netlify/blobs');
-    const store = getStore('license-keys');
-    await store.setJSON('bank_config', config);
+    const store = await getBlobsStore('license-keys');
+    if (store) {
+      await store.setJSON('bank_config', config);
+    }
   } catch (e) { }
 }
 
@@ -185,12 +212,13 @@ let memoryAdminAuth = {
 
 async function loadAdminAuth() {
   try {
-    const { getStore } = require('@netlify/blobs');
-    const store = getStore('license-keys');
-    const data = await store.get('admin_auth', { type: 'json' });
-    if (data && data.username && data.password) {
-      memoryAdminAuth = data;
-      return memoryAdminAuth;
+    const store = await getBlobsStore('license-keys');
+    if (store) {
+      const data = await store.get('admin_auth', { type: 'json' });
+      if (data && data.username && data.password) {
+        memoryAdminAuth = data;
+        return memoryAdminAuth;
+      }
     }
   } catch (e) { }
 
@@ -206,9 +234,10 @@ async function loadAdminAuth() {
 async function saveAdminAuth(auth) {
   memoryAdminAuth = auth;
   try {
-    const { getStore } = require('@netlify/blobs');
-    const store = getStore('license-keys');
-    await store.setJSON('admin_auth', auth);
+    const store = await getBlobsStore('license-keys');
+    if (store) {
+      await store.setJSON('admin_auth', auth);
+    }
   } catch (e) { }
 }
 
@@ -344,6 +373,40 @@ exports.handler = async function (event) {
   }
 
   // ---------------- PUBLIC ORDERS & BANK APIs ----------------
+  // GET /api/debug/blobs
+  if (path === '/api/debug/blobs' && event.httpMethod === 'GET') {
+    try {
+      const { getStore } = require('@netlify/blobs');
+      const store = getStore('license-keys');
+      await store.setJSON('test_blob', { ok: true, time: Date.now() });
+      const read = await store.get('test_blob', { type: 'json' });
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          success: true,
+          read,
+          env: {
+            hasBlobsContext: !!process.env.NETLIFY_BLOBS_CONTEXT,
+            siteId: !!process.env.SITE_ID,
+            token: !!process.env.NETLIFY_BLOBS_TOKEN
+          }
+        })
+      };
+    } catch (err) {
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          success: false,
+          error: err.message,
+          name: err.name,
+          stack: err.stack
+        })
+      };
+    }
+  }
+
   // GET /api/config/bank
   if (path === '/api/config/bank' && event.httpMethod === 'GET') {
     const bank = await loadBankConfig();
