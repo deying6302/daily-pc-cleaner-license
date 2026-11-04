@@ -77,18 +77,57 @@ async function loadKeys() {
   try {
     const store = getDbStore('license-keys');
     if (store) {
-      const data = await store.get('keys_db', { type: 'json' });
-      // If keys_db exists in Blobs (even if empty [] because user deleted all keys), use it!
-      if (Array.isArray(data)) {
-        memoryKeys = data;
-        return memoryKeys;
+      let data = await store.get('keys_db', { type: 'json' });
+      if (!Array.isArray(data)) {
+        if (initialSeed.length > 0) {
+          data = initialSeed;
+          await store.setJSON('keys_db', data);
+        } else {
+          data = [];
+        }
       }
-      // Only seed on initial run if keys_db does not exist in store at all (null)
-      if (initialSeed.length > 0) {
-        memoryKeys = initialSeed;
-        await store.setJSON('keys_db', memoryKeys);
-        return memoryKeys;
-      }
+
+      // Check orders to auto-restore & protect customer order keys
+      try {
+        const ordersData = await store.get('orders_db', { type: 'json' });
+        const ordersList = Array.isArray(ordersData) ? ordersData : memoryOrders;
+        let needsSave = false;
+        for (const o of ordersList) {
+          if (o.Status === 'completed' && o.AssignedKey) {
+            const keyUpper = o.AssignedKey.toUpperCase();
+            let existing = data.find(k => k.Key.toUpperCase() === keyUpper);
+            if (!existing) {
+              data.unshift({
+                Key: o.AssignedKey,
+                CustomerName: o.CustomerName || o.Email,
+                PlanType: o.PlanName || 'PRO',
+                DaysValid: 3,
+                CreatedAt: o.CompletedAt || o.CreatedAt,
+                ExpiresAt: o.ExpiresAt || null,
+                MaxActivations: 1,
+                Notes: `Đơn hàng ${o.OrderId} (${o.Email})`,
+                OrderId: o.OrderId,
+                IsOrderKey: true,
+                IsRevoked: false,
+                ActivatedMachines: []
+              });
+              needsSave = true;
+            } else {
+              if (!existing.IsOrderKey) {
+                existing.IsOrderKey = true;
+                existing.OrderId = o.OrderId;
+                needsSave = true;
+              }
+            }
+          }
+        }
+        if (needsSave) {
+          await store.setJSON('keys_db', data);
+        }
+      } catch (errOrders) { }
+
+      memoryKeys = data;
+      return memoryKeys;
     }
   } catch (e) {
     console.error('loadKeys Blobs error:', e);
@@ -597,6 +636,16 @@ export default async (req, context) => {
     const idx = keys.findIndex(k => k.Key.toUpperCase() === key);
     if (idx === -1) return jsonResponse({ success: false, error: 'Key không tồn tại' }, 404);
 
+    const target = keys[idx];
+    const orders = await loadOrders();
+    const isOrderKey = target.IsOrderKey || !!target.OrderId || orders.some(o => o.AssignedKey && o.AssignedKey.toUpperCase() === key);
+    if (isOrderKey) {
+      return jsonResponse({
+        success: false,
+        error: '⛔ BẢO VỆ ĐƠN HÀNG: Không thể xóa mã Key này vì thuộc về đơn hàng đã mua của khách! Nếu muốn ngưng quyền sử dụng, vui lòng bấm nút "Thu Hồi".'
+      }, 400);
+    }
+
     keys.splice(idx, 1);
     await saveKeys(keys);
     return jsonResponse({ success: true });
@@ -604,9 +653,24 @@ export default async (req, context) => {
 
   // POST /api/keys/delete-all
   if (path === '/api/keys/delete-all' && method === 'POST') {
+    const orders = await loadOrders();
+    const orderKeySet = new Set(
+      orders.filter(o => o.Status === 'completed' && o.AssignedKey)
+            .map(o => o.AssignedKey.toUpperCase())
+    );
+
+    const keptKeys = keys.filter(k => k.IsOrderKey || k.OrderId || orderKeySet.has(k.Key.toUpperCase()));
+    const deletedCount = keys.length - keptKeys.length;
     keys.length = 0;
+    keys.push(...keptKeys);
     await saveKeys(keys);
-    return jsonResponse({ success: true, count: 0 });
+
+    return jsonResponse({
+      success: true,
+      deletedCount,
+      keptCount: keptKeys.length,
+      message: `Đã xóa ${deletedCount} mã key thử nghiệm. Toàn bộ ${keptKeys.length} mã key của khách hàng đã mua được bảo vệ an toàn!`
+    });
   }
 
   // POST /api/keys/offline-token

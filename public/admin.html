@@ -626,6 +626,7 @@
         const actCount = (k.ActivatedMachines || []).length;
         const maxAct = k.MaxActivations || 1;
         const isRevoked = k.IsRevoked;
+        const isOrderKey = k.IsOrderKey || !!k.OrderId || (k.Notes && k.Notes.includes('Đơn hàng'));
         const statusBadge = isRevoked
           ? '<span class="px-2.5 py-1 rounded-full text-xs font-semibold badge-revoked">ĐÃ THU HỒI</span>'
           : '<span class="px-2.5 py-1 rounded-full text-xs font-semibold badge-active">HOẠT ĐỘNG</span>';
@@ -637,7 +638,10 @@
               <button onclick="copyText('${k.Key}', this)" class="ml-1 text-slate-400 hover:text-teal-700 text-xs">📋</button>
             </td>
             <td class="py-3 px-4">
-              <div class="font-semibold text-slate-900 text-xs">${escapeHtml(k.CustomerName || 'Khách hàng')}</div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="font-semibold text-slate-900 text-xs">${escapeHtml(k.CustomerName || 'Khách hàng')}</span>
+                ${isOrderKey ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">🛒 Khách Mua</span>' : ''}
+              </div>
               <div class="text-[11px] text-slate-400">${escapeHtml(k.Notes || '')}</div>
             </td>
             <td class="py-3 px-4 text-xs font-medium text-slate-700">${escapeHtml(k.PlanType || 'Lifetime')}</td>
@@ -658,10 +662,16 @@
                   class="p-1 text-slate-400 hover:text-teal-700 rounded">
                   🔑
                 </button>
-                <button onclick="deleteKey('${k.Key}')" title="Xóa Key"
-                  class="p-1 text-slate-400 hover:text-red-600 rounded">
-                  🗑️
-                </button>
+                ${isOrderKey ? `
+                  <span class="p-1 text-amber-500 font-bold text-xs select-none cursor-help" title="Mã Key thuộc về đơn hàng của khách - Được bảo vệ, không thể xóa!">
+                    🔒
+                  </span>
+                ` : `
+                  <button onclick="deleteKey('${k.Key}')" title="Xóa Key thử nghiệm"
+                    class="p-1 text-slate-400 hover:text-red-600 rounded cursor-pointer">
+                    🗑️
+                  </button>
+                `}
               </div>
             </td>
           </tr>
@@ -935,7 +945,7 @@ Website: https://daily-pc-cleaner.netlify.app/`;
     }
 
     async function deleteKey(key) {
-      if (!confirm(`CẢNH BÁO: Xóa hoàn toàn mã Key ${key} khỏi hệ thống?`)) return;
+      if (!confirm(`CẢNH BÁO: Xóa mã Key thử nghiệm ${key} khỏi hệ thống?`)) return;
       try {
         const res = await fetch('/api/keys/delete', {
           method: 'POST',
@@ -943,23 +953,33 @@ Website: https://daily-pc-cleaner.netlify.app/`;
           body: JSON.stringify({ key })
         });
         const data = await res.json();
-        if (data.success) fetchKeys();
+        if (data.success) {
+          fetchKeys();
+        } else {
+          alert(data.error || 'Không thể xóa mã Key này!');
+        }
       } catch (e) { alert('Lỗi: ' + e.message); }
     }
 
     async function deleteAllKeys() {
-      if (!allKeys || allKeys.length === 0) {
-        alert('Hiện tại hệ thống không còn mã Key nào!');
+      const testKeys = allKeys.filter(k => !(k.IsOrderKey || k.OrderId || (k.Notes && k.Notes.includes('Đơn hàng'))));
+      if (testKeys.length === 0) {
+        alert('Hiện tại hệ thống không có mã Key thử nghiệm nào để xóa!\n\n(Tất cả mã Key của khách đã mua đều được BẢO VỆ TUYỆT ĐỐI và không thể xóa)');
         return;
       }
-      if (!confirm(`CẢNH BÁO: Bạn có chắc chắn muốn XÓA TOÀN BỘ tất cả ${allKeys.length} mã Key trong hệ thống không?\nSau khi xóa, toàn bộ Key sẽ biến mất vĩnh viễn và KHÔNG tự khôi phục lại!`)) return;
+      if (!confirm(`Xác nhận xóa sạch ${testKeys.length} mã Key thử nghiệm?\n\nLƯU Ý QUAN TRỌNG: Toàn bộ mã Key thuộc đơn hàng đã mua của khách hàng sẽ được BẢO VỆ TUYỆT ĐỐI và KHÔNG BỊ XÓA!`)) return;
       try {
         const res = await fetch('/api/keys/delete-all', {
           method: 'POST',
           headers: getAuthHeaders()
         });
         const data = await res.json();
-        if (data.success) fetchKeys();
+        if (data.success) {
+          alert(data.message || 'Đã dọn dẹp các Key thử nghiệm thành công!');
+          fetchKeys();
+        } else {
+          alert('Lỗi: ' + (data.error || ''));
+        }
       } catch (e) { alert('Lỗi: ' + e.message); }
     }
 
