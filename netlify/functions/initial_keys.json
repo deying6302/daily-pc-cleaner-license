@@ -1,5 +1,17 @@
 [
   {
+    "Key": "PRO-ED50-9C87-7D8C",
+    "CustomerName": "Đức Anh Nguyễn",
+    "PlanType": "Dùng thử 3 ngày",
+    "DaysValid": 3,
+    "CreatedAt": "2026-11-04 11:36:50",
+    "ExpiresAt": "2026-11-07 11:36:50",
+    "MaxActivations": 1,
+    "Notes": "Đơn hàng DPCC-4708 (ducanh25820@gmail.com)",
+    "IsRevoked": false,
+    "ActivatedMachines": []
+  },
+  {
     "Key": "DPCC-LXLM-7646-TQSP-KDSN",
     "CustomerName": "Nguyen Van Test 3 Days",
     "PlanType": "Dùng thử 3 ngày",
