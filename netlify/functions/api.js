@@ -195,6 +195,20 @@ async function loadOrders(force = false) {
     if (store) {
       const data = await store.get('orders_db', { type: 'json' });
       if (Array.isArray(data)) {
+        let changed = false;
+        for (const o of data) {
+          if (o.Price === undefined && o.Amount !== undefined) {
+            o.Price = o.Amount;
+            changed = true;
+          }
+          if (o.Amount === undefined && o.Price !== undefined) {
+            o.Amount = o.Price;
+            changed = true;
+          }
+        }
+        if (changed) {
+          try { await store.setJSON('orders_db', data); } catch (eSave) {}
+        }
         memoryOrders = data;
         lastOrdersLoad = Date.now();
         return memoryOrders;
