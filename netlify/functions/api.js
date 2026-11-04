@@ -306,6 +306,47 @@ exports.handler = async function (event) {
   if (!path.startsWith('/api')) path = '/api' + (path === '/' ? '' : path);
 
   const body = event.body ? (typeof event.body === 'string' ? JSON.parse(event.body || '{}') : event.body) : {};
+
+  // ---------------- DIAGNOSTIC API: /api/diag ----------------
+  if (path === '/api/diag') {
+    let diag = {
+      timestamp: new Date().toISOString(),
+      nodeVersion: process.version,
+      hasSiteId: !!process.env.SITE_ID,
+      hasBlobsContext: !!process.env.NETLIFY_BLOBS_CONTEXT,
+      envKeys: Object.keys(process.env).filter(k => k.includes('BLOB') || k.includes('SITE') || k.includes('NETLIFY')),
+      importError: null,
+      requireError: null,
+      storeStatus: null,
+      memoryKeysCount: memoryKeys.length,
+      memoryOrdersCount: memoryOrders.length
+    };
+    try {
+      const mod = await import('@netlify/blobs');
+      diag.importSuccess = !!mod;
+      diag.hasGetStore = !!(mod && typeof mod.getStore === 'function');
+      if (mod && mod.getStore) {
+        const store = mod.getStore('license-keys');
+        await store.setJSON('test_diag', { ok: true, now: Date.now() });
+        const val = await store.get('test_diag', { type: 'json' });
+        diag.storeStatus = val && val.ok ? 'WORKING' : 'NULL_GET';
+      }
+    } catch (err) {
+      diag.importError = err.message || String(err);
+    }
+    try {
+      const modCjs = require('@netlify/blobs');
+      diag.requireSuccess = !!modCjs;
+    } catch (err2) {
+      diag.requireError = err2.message || String(err2);
+    }
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify(diag, null, 2)
+    };
+  }
+
   const keys = await loadKeys();
 
   // ---------------- PUBLIC CLIENT API: /api/activate ----------------
