@@ -1,0 +1,13 @@
+{
+  "name": "daily-pc-cleaner-admin",
+  "version": "1.0.0",
+  "description": "Daily PC Cleaner - Serverless License Manager for Netlify",
+  "main": "netlify/functions/api.js",
+  "scripts": {
+    "build": "echo 'Build complete'"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^8.0.0",
+    "@netlify/functions": "^2.6.0"
+  }
+}
