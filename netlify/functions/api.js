@@ -78,10 +78,13 @@ async function loadKeys() {
     const store = getDbStore('license-keys');
     if (store) {
       const data = await store.get('keys_db', { type: 'json' });
-      if (Array.isArray(data) && data.length > 0) {
+      // If keys_db exists in Blobs (even if empty [] because user deleted all keys), use it!
+      if (Array.isArray(data)) {
         memoryKeys = data;
         return memoryKeys;
-      } else if (initialSeed.length > 0) {
+      }
+      // Only seed on initial run if keys_db does not exist in store at all (null)
+      if (initialSeed.length > 0) {
         memoryKeys = initialSeed;
         await store.setJSON('keys_db', memoryKeys);
         return memoryKeys;
@@ -597,6 +600,13 @@ export default async (req, context) => {
     keys.splice(idx, 1);
     await saveKeys(keys);
     return jsonResponse({ success: true });
+  }
+
+  // POST /api/keys/delete-all
+  if (path === '/api/keys/delete-all' && method === 'POST') {
+    keys.length = 0;
+    await saveKeys(keys);
+    return jsonResponse({ success: true, count: 0 });
   }
 
   // POST /api/keys/offline-token
