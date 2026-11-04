@@ -16,36 +16,10 @@ try {
   initialSeed = [];
 }
 
-let memoryKeys = initialSeed.length > 0 ? initialSeed : [
-  {
-    Key: 'PRO-TRIAL-3D-NETLIFY-DEMO',
-    CustomerName: 'Khách Hàng Dùng Thử',
-    PlanType: 'Dùng thử 3 ngày',
-    DaysValid: 3,
-    CreatedAt: new Date().toISOString().replace('T', ' ').substring(0, 19),
-    ExpiresAt: new Date(Date.now() + 3 * 24 * 3600 * 1000).toISOString().replace('T', ' ').substring(0, 19),
-    MaxActivations: 1,
-    Notes: 'Mã khởi tạo sẵn khi triển khai Netlify',
-    IsRevoked: false,
-    ActivatedMachines: []
-  }
-];
-
-let memoryOrders = [
-  {
-    OrderId: 'DPCC-4708',
-    CreatedAt: '2026-11-04 11:36:50',
-    CompletedAt: '2026-11-04 11:36:50',
-    CustomerName: 'Đức Anh Nguyễn',
-    Phone: '0332618488',
-    Email: 'ducanh25820@gmail.com',
-    PlanId: 'trial-3d',
-    PlanName: 'Dùng Thử 3 Ngày (72h)',
-    Amount: 19000,
-    Status: 'completed',
-    AssignedKey: 'PRO-ED50-9C87-7D8C'
-  }
-];
+let memoryKeys = null;
+let lastKeysLoad = 0;
+let memoryOrders = null;
+let lastOrdersLoad = 0;
 
 let memoryBankConfig = {
   bankId: 'MB',
@@ -72,8 +46,30 @@ function getDbStore(name = 'license-keys') {
   }
 }
 
+function computeExpiresAt(createdAtStr, planType, daysValid) {
+  const p = (planType || '').toLowerCase();
+  const isLifetime = p.includes('vĩnh viễn') || p.includes('vinh vien') || p.includes('lifetime') || (daysValid === 0 && !p.includes('ngày') && !p.includes('năm') && !p.includes('tháng') && !p.includes('72h'));
+  if (isLifetime) return null;
+  let days = 30;
+  if (daysValid && daysValid > 0) {
+    days = daysValid;
+  }
+  if (p.includes('3 ngày') || p.includes('3 day') || p.includes('72h')) days = 3;
+  else if (p.includes('1 ngày') || p.includes('1 day') || p.includes('24h')) days = 1;
+  else if (p.includes('365') || p.includes('1 năm') || p.includes('1 nam')) days = 365;
+  else if (p.includes('30 ngày') || p.includes('1 tháng')) days = 30;
+
+  const baseDate = createdAtStr ? new Date(createdAtStr.replace(' ', 'T')) : new Date();
+  if (isNaN(baseDate.getTime())) return null;
+  const exp = new Date(baseDate.getTime() + days * 24 * 3600 * 1000);
+  return exp.toISOString().replace('T', ' ').substring(0, 19);
+}
+
 // ==================== DATABASE LOADERS & PERSISTENCE ====================
-async function loadKeys() {
+async function loadKeys(force = false) {
+  if (!force && memoryKeys !== null && (Date.now() - lastKeysLoad < 5000)) {
+    return memoryKeys;
+  }
   try {
     const store = getDbStore('license-keys');
     if (store) {
@@ -87,56 +83,99 @@ async function loadKeys() {
         }
       }
 
+      let needsSave = false;
+
+      // Ensure proper ExpiresAt for all existing keys
+      for (const k of data) {
+        const p = (k.PlanType || '').toLowerCase();
+        const isLifetime = p.includes('vĩnh viễn') || p.includes('vinh vien') || p.includes('lifetime') || (k.DaysValid === 0 && !p.includes('ngày') && !p.includes('năm') && !p.includes('tháng') && !p.includes('72h'));
+        if (!isLifetime && (!k.ExpiresAt || k.ExpiresAt === 'Vĩnh viễn' || k.ExpiresAt.includes('9999'))) {
+          let d = 30;
+          if (p.includes('3 ngày') || p.includes('72h')) d = 3;
+          else if (p.includes('1 ngày') || p.includes('24h')) d = 1;
+          else if (p.includes('365') || p.includes('1 năm')) d = 365;
+          else if (k.DaysValid > 0) d = k.DaysValid;
+          k.DaysValid = d;
+          k.ExpiresAt = computeExpiresAt(k.CreatedAt, k.PlanType, d);
+          needsSave = true;
+        }
+      }
+
       // Check orders to auto-restore & protect customer order keys
       try {
-        const ordersData = await store.get('orders_db', { type: 'json' });
-        const ordersList = Array.isArray(ordersData) ? ordersData : memoryOrders;
-        let needsSave = false;
-        for (const o of ordersList) {
-          if (o.Status === 'completed' && o.AssignedKey) {
-            const keyUpper = o.AssignedKey.toUpperCase();
-            let existing = data.find(k => k.Key.toUpperCase() === keyUpper);
-            if (!existing) {
-              data.unshift({
-                Key: o.AssignedKey,
-                CustomerName: o.CustomerName || o.Email,
-                PlanType: o.PlanName || 'PRO',
-                DaysValid: 3,
-                CreatedAt: o.CompletedAt || o.CreatedAt,
-                ExpiresAt: o.ExpiresAt || null,
-                MaxActivations: 1,
-                Notes: `Đơn hàng ${o.OrderId} (${o.Email})`,
-                OrderId: o.OrderId,
-                IsOrderKey: true,
-                IsRevoked: false,
-                ActivatedMachines: []
-              });
-              needsSave = true;
-            } else {
-              if (!existing.IsOrderKey) {
-                existing.IsOrderKey = true;
-                existing.OrderId = o.OrderId;
+        let ordersList = memoryOrders;
+        if (!ordersList) {
+          const ordersData = await store.get('orders_db', { type: 'json' });
+          if (Array.isArray(ordersData)) {
+            memoryOrders = ordersData;
+            lastOrdersLoad = Date.now();
+            ordersList = ordersData;
+          }
+        }
+        if (Array.isArray(ordersList)) {
+          for (const o of ordersList) {
+            if (o.Status === 'completed' && o.AssignedKey) {
+              const keyUpper = o.AssignedKey.toUpperCase();
+              let existing = data.find(k => k.Key.toUpperCase() === keyUpper);
+              let d = 30;
+              const p = (o.PlanName || '').toLowerCase();
+              if (p.includes('3 ngày') || p.includes('72h')) d = 3;
+              else if (p.includes('1 ngày') || p.includes('24h')) d = 1;
+              else if (p.includes('365') || p.includes('1 năm')) d = 365;
+              else if (p.includes('vĩnh viễn') || p.includes('lifetime')) d = 0;
+
+              const exp = computeExpiresAt(o.CompletedAt || o.CreatedAt, o.PlanName, d);
+
+              if (!existing) {
+                data.unshift({
+                  Key: o.AssignedKey,
+                  CustomerName: o.CustomerName || o.Email,
+                  PlanType: o.PlanName || 'Dùng thử 3 ngày',
+                  DaysValid: d,
+                  CreatedAt: o.CompletedAt || o.CreatedAt,
+                  ExpiresAt: exp,
+                  MaxActivations: 1,
+                  Notes: `Đơn hàng ${o.OrderId} (${o.Email})`,
+                  OrderId: o.OrderId,
+                  IsOrderKey: true,
+                  IsRevoked: false,
+                  ActivatedMachines: []
+                });
                 needsSave = true;
+              } else {
+                if (!existing.IsOrderKey) {
+                  existing.IsOrderKey = true;
+                  existing.OrderId = o.OrderId;
+                  needsSave = true;
+                }
+                if ((!existing.ExpiresAt || existing.ExpiresAt === 'Vĩnh viễn' || existing.ExpiresAt.includes('9999')) && exp) {
+                  existing.ExpiresAt = exp;
+                  existing.DaysValid = d;
+                  needsSave = true;
+                }
               }
             }
           }
         }
-        if (needsSave) {
-          await store.setJSON('keys_db', data);
-        }
       } catch (errOrders) { }
 
+      if (needsSave) {
+        await store.setJSON('keys_db', data);
+      }
+
       memoryKeys = data;
+      lastKeysLoad = Date.now();
       return memoryKeys;
     }
   } catch (e) {
     console.error('loadKeys Blobs error:', e);
   }
-  return memoryKeys;
+  return memoryKeys || [];
 }
 
 async function saveKeys(keys) {
   memoryKeys = keys;
+  lastKeysLoad = Date.now();
   try {
     const store = getDbStore('license-keys');
     if (store) {
@@ -147,26 +186,29 @@ async function saveKeys(keys) {
   }
 }
 
-async function loadOrders() {
+async function loadOrders(force = false) {
+  if (!force && memoryOrders !== null && (Date.now() - lastOrdersLoad < 4000)) {
+    return memoryOrders;
+  }
   try {
     const store = getDbStore('license-keys');
     if (store) {
       const data = await store.get('orders_db', { type: 'json' });
       if (Array.isArray(data)) {
         memoryOrders = data;
+        lastOrdersLoad = Date.now();
         return memoryOrders;
-      } else if (memoryOrders.length > 0) {
-        await store.setJSON('orders_db', memoryOrders);
       }
     }
   } catch (e) {
     console.error('loadOrders Blobs error:', e);
   }
-  return memoryOrders;
+  return memoryOrders || [];
 }
 
 async function saveOrders(orders) {
   memoryOrders = orders;
+  lastOrdersLoad = Date.now();
   try {
     const store = getDbStore('license-keys');
     if (store) {
@@ -374,10 +416,9 @@ export default async (req, context) => {
     return jsonResponse(diag);
   }
 
-  const keys = await loadKeys();
-
   // ---------------- PUBLIC CLIENT API: /api/activate ----------------
   if (path === '/api/activate' && method === 'POST') {
+    const keys = await loadKeys();
     const key = (body.key || '').trim().toUpperCase();
     const hwid = (body.hwid || '').trim();
     const machineName = (body.machineName || '').trim();
@@ -431,6 +472,7 @@ export default async (req, context) => {
 
   // ---------------- PUBLIC CLIENT API: /api/check ----------------
   if (path === '/api/check' && method === 'POST') {
+    const keys = await loadKeys();
     const key = (body.key || '').trim().toUpperCase();
     const hwid = (body.hwid || '').trim();
 
@@ -571,10 +613,14 @@ export default async (req, context) => {
     return jsonResponse({ success: false, error: 'Chưa đăng nhập quyền quản trị!' }, 401);
   }
 
-  // GET /api/keys
-  if (path === '/api/keys' && method === 'GET') {
-    return jsonResponse({ success: true, keys });
-  }
+  // ---------------- PROTECTED KEY APIs ----------------
+  if (path.startsWith('/api/keys')) {
+    const keys = await loadKeys();
+
+    // GET /api/keys
+    if (path === '/api/keys' && method === 'GET') {
+      return jsonResponse({ success: true, keys });
+    }
 
   // POST /api/keys/generate
   if (path === '/api/keys/generate' && method === 'POST') {
@@ -691,6 +737,7 @@ export default async (req, context) => {
     const token = encryptString(raw);
 
     return jsonResponse({ success: true, offlineToken: token });
+    }
   }
 
   // ---------------- PROTECTED ORDERS & BANK APIs ----------------
@@ -703,7 +750,8 @@ export default async (req, context) => {
   // POST /api/orders/approve
   if (path === '/api/orders/approve' && method === 'POST') {
     const orderId = (body.orderId || '').trim().toUpperCase();
-    const orders = await loadOrders();
+    const orders = await loadOrders(true);
+    const keys = await loadKeys(true);
     const order = orders.find(o => o.OrderId.toUpperCase() === orderId);
     if (!order) return jsonResponse({ success: false, error: 'Không tìm thấy đơn hàng!' }, 404);
 
@@ -757,6 +805,8 @@ export default async (req, context) => {
       ExpiresAt: expiresAt,
       MaxActivations: maxActivations,
       Notes: `Đơn hàng ${order.OrderId} (${order.Email})`,
+      OrderId: order.OrderId,
+      IsOrderKey: true,
       IsRevoked: false,
       ActivatedMachines: []
     };

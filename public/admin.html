@@ -512,6 +512,73 @@
     let allKeys = [];
     let allOrders = [];
 
+    // Instant local cache restoration for 0ms render
+    try {
+      const cachedK = localStorage.getItem('cached_admin_keys');
+      if (cachedK) allKeys = JSON.parse(cachedK);
+      const cachedO = localStorage.getItem('cached_admin_orders');
+      if (cachedO) allOrders = JSON.parse(cachedO);
+    } catch (e) {}
+
+    function formatDateOnly(dtStr) {
+      if (!dtStr) return '';
+      const clean = dtStr.trim();
+      const m = clean.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) {
+        return `${m[3]}/${m[2]}/${m[1]}`;
+      }
+      const dateObj = new Date(clean.replace(' ', 'T'));
+      if (!isNaN(dateObj.getTime())) {
+        const d = String(dateObj.getDate()).padStart(2, '0');
+        const mo = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const y = dateObj.getFullYear();
+        return `${d}/${mo}/${y}`;
+      }
+      return clean;
+    }
+
+    function formatLicenseDuration(k) {
+      const p = (k.PlanType || '').toLowerCase();
+      const isLifetime = p.includes('vĩnh viễn') || p.includes('vinh vien') || p.includes('lifetime') || (k.DaysValid === 0 && !p.includes('ngày') && !p.includes('năm') && !p.includes('tháng') && !p.includes('72h'));
+      
+      if (isLifetime) {
+        return '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Vĩnh Viễn</span>';
+      }
+
+      let expStr = k.ExpiresAt;
+      if (!expStr || expStr === 'Vĩnh viễn' || expStr.includes('9999')) {
+        let days = k.DaysValid || 3;
+        if (p.includes('3 ngày') || p.includes('72h')) days = 3;
+        else if (p.includes('1 ngày') || p.includes('24h')) days = 1;
+        else if (p.includes('365') || p.includes('1 năm')) days = 365;
+        else if (p.includes('30 ngày') || p.includes('1 tháng')) days = 30;
+
+        if (k.CreatedAt) {
+          const m = k.CreatedAt.match(/^(\d{4})-(\d{2})-(\d{2})/);
+          if (m) {
+            const d = new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
+            d.setDate(d.getDate() + days);
+            const yExp = d.getFullYear();
+            const moExp = String(d.getMonth() + 1).padStart(2, '0');
+            const dayExp = String(d.getDate()).padStart(2, '0');
+            expStr = `${yExp}-${moExp}-${dayExp}`;
+          }
+        }
+      }
+
+      const fromDate = formatDateOnly(k.CreatedAt) || 'Hôm nay';
+      const toDate = formatDateOnly(expStr);
+
+      if (toDate) {
+        return `<div class="text-xs">
+          <span class="text-slate-500">Từ ngày</span> <b class="text-slate-900 font-bold">${fromDate}</b><br/>
+          <span class="text-slate-500">đến ngày</span> <b class="text-teal-700 font-bold">${toDate}</b>
+        </div>`;
+      }
+
+      return '<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Vĩnh Viễn</span>';
+    }
+
     function getAuthHeaders() {
       const token = localStorage.getItem('admin_token') || '';
       return {
@@ -575,6 +642,7 @@
         const data = await res.json();
         if (data.success && Array.isArray(data.keys)) {
           allKeys = data.keys;
+          try { localStorage.setItem('cached_admin_keys', JSON.stringify(allKeys)); } catch (e) {}
           renderMetrics();
           applyFilters();
         }
@@ -645,7 +713,7 @@
               <div class="text-[11px] text-slate-400">${escapeHtml(k.Notes || '')}</div>
             </td>
             <td class="py-3 px-4 text-xs font-medium text-slate-700">${escapeHtml(k.PlanType || 'Lifetime')}</td>
-            <td class="py-3 px-4 text-xs font-mono text-slate-500">${k.ExpiresAt ? k.ExpiresAt : 'Vĩnh viễn'}</td>
+            <td class="py-3 px-4 text-xs">${formatLicenseDuration(k)}</td>
             <td class="py-3 px-4 text-xs">
               <button onclick="showMachines('${k.Key}')" class="underline text-teal-700 font-semibold hover:text-teal-900">
                 💻 ${actCount}/${maxAct} máy
@@ -690,6 +758,7 @@
         const data = await res.json();
         if (data.success && Array.isArray(data.orders)) {
           allOrders = data.orders;
+          try { localStorage.setItem('cached_admin_orders', JSON.stringify(allOrders)); } catch (e) {}
           const pending = allOrders.filter(o => o.Status === 'awaiting_approval' || o.Status === 'pending').length;
           document.getElementById('statPendingOrders').innerText = pending;
           document.getElementById('badgeOrdersCount').innerText = allOrders.length;
@@ -1142,6 +1211,16 @@ Website: https://daily-pc-cleaner.netlify.app/`;
     // Init
     checkAuth().then(ok => {
       if (ok) {
+        if (allKeys.length > 0) {
+          renderMetrics();
+          applyFilters();
+        }
+        if (allOrders.length > 0) {
+          const pending = allOrders.filter(o => o.Status === 'awaiting_approval' || o.Status === 'pending').length;
+          document.getElementById('statPendingOrders').innerText = pending;
+          document.getElementById('badgeOrdersCount').innerText = allOrders.length;
+          applyOrderFilters();
+        }
         fetchKeys();
         fetchOrders();
         loadBankConfig();
