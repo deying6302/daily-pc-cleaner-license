@@ -6,7 +6,12 @@ const DEFAULT_ADMIN_USER = process.env.ADMIN_USERNAME || 'admin';
 const DEFAULT_ADMIN_PASS = process.env.ADMIN_PASSWORD || 'admin123';
 
 // In-memory fallback cache
-let memoryKeys = [
+let initialSeed = [];
+try {
+  initialSeed = require('./initial_keys.json');
+} catch (e) { }
+
+let memoryKeys = initialSeed.length > 0 ? initialSeed : [
   {
     Key: 'PRO-TRIAL-3D-NETLIFY-DEMO',
     CustomerName: 'Khách Hàng Dùng Thử',
@@ -53,7 +58,7 @@ function decryptString(encryptedBase64) {
 
 // ==================== DATABASE ABSTRACTION ====================
 async function loadKeys() {
-  // 1. Try Netlify Blobs
+  // 1. Try Netlify Blobs (Primary storage)
   try {
     const { getStore } = require('@netlify/blobs');
     const store = getStore('license-keys');
@@ -61,6 +66,13 @@ async function loadKeys() {
     if (data && Array.isArray(data)) {
       memoryKeys = data;
       return memoryKeys;
+    } else {
+      // First time deployment on Netlify: seed initial database!
+      if (initialSeed && initialSeed.length > 0) {
+        memoryKeys = initialSeed;
+        await store.setJSON('keys_db', memoryKeys);
+        return memoryKeys;
+      }
     }
   } catch (e) {
     // Netlify Blobs not available in local test or unconfigured
@@ -274,7 +286,7 @@ exports.handler = async function (event) {
   if (path === '/api/keys/generate' && event.httpMethod === 'POST') {
     const customer = (body.customer || 'Khách hàng').trim();
     const plan = (body.plan || '30 Ngày').trim();
-    const days = parseInt(body.days) || 30;
+    const days = body.days !== undefined && body.days !== null ? parseInt(body.days, 10) : 30;
     const maxActivations = parseInt(body.maxActivations) || 1;
     const notes = (body.notes || '').trim();
 
@@ -289,7 +301,8 @@ exports.handler = async function (event) {
     const createdAt = now.toISOString().replace('T', ' ').substring(0, 19);
     let expiresAt = null;
 
-    if (days > 0 && plan !== 'Lifetime' && plan !== 'Vĩnh viễn') {
+    const isLifetime = plan.toLowerCase().includes('vĩnh viễn') || plan.toLowerCase().includes('vinh vien') || plan.toLowerCase().includes('lifetime') || days === 0;
+    if (!isLifetime && days > 0) {
       const exp = new Date(now.getTime() + days * 24 * 3600 * 1000);
       expiresAt = exp.toISOString().replace('T', ' ').substring(0, 19);
     }
@@ -297,8 +310,8 @@ exports.handler = async function (event) {
     const newRecord = {
       Key: key,
       CustomerName: customer,
-      PlanType: plan,
-      DaysValid: days,
+      PlanType: isLifetime ? 'Vĩnh viễn' : plan,
+      DaysValid: isLifetime ? 0 : days,
       CreatedAt: createdAt,
       ExpiresAt: expiresAt,
       MaxActivations: maxActivations,

@@ -1,0 +1,86 @@
+[
+  {
+    "Key": "DPCC-LXLM-7646-TQSP-KDSN",
+    "CustomerName": "Nguyen Van Test 3 Days",
+    "PlanType": "Dùng thử 3 ngày",
+    "DaysValid": 3,
+    "CreatedAt": "2026-11-03 23:30:55",
+    "ExpiresAt": "2026-11-06 23:30:55",
+    "MaxActivations": 2,
+    "Notes": "Test 3-day renewal warning",
+    "IsRevoked": false,
+    "ActivatedMachines": [
+      {
+        "Hwid": "A113B252EB9C8ED9",
+        "MachineName": "DESKTOP-HPE9I92",
+        "ActivatedAt": "2026-11-03 23:32:17"
+      }
+    ]
+  },
+  {
+    "Key": "DPCC-85GE-8VA9-9F8Q-X8YR",
+    "CustomerName": "Nguyen Van Test 7 Days",
+    "PlanType": "Gói 7 ngày",
+    "DaysValid": 7,
+    "CreatedAt": "2026-11-03 23:29:27",
+    "ExpiresAt": "2026-11-10 23:29:27",
+    "MaxActivations": 2,
+    "Notes": "Key đang hoạt động trên máy khách",
+    "IsRevoked": false,
+    "ActivatedMachines": [
+      {
+        "Hwid": "A113B252EB9C8ED9",
+        "MachineName": "DESKTOP-HPE9I92",
+        "ActivatedAt": "2026-11-03 23:53:01"
+      }
+    ]
+  },
+  {
+    "Key": "DPCC-PQXM-4AXT-9VPN-3DJV",
+    "CustomerName": "Nguyễn Đức Anh",
+    "PlanType": "Vĩnh viễn",
+    "DaysValid": 36500,
+    "CreatedAt": "2026-11-03 23:17:01",
+    "ExpiresAt": "2099-12-31 23:59:59",
+    "MaxActivations": 1,
+    "Notes": "",
+    "IsRevoked": true,
+    "ActivatedMachines": [
+      {
+        "Hwid": "A113B252EB9C8ED9",
+        "MachineName": "DESKTOP-HPE9I92",
+        "ActivatedAt": "2026-11-03 23:17:14"
+      }
+    ]
+  },
+  {
+    "Key": "DPCC-DBT8-ZGEE-TWW2-UM4C",
+    "CustomerName": "Test Revoke Customer",
+    "PlanType": "Vĩnh viễn",
+    "DaysValid": 36500,
+    "CreatedAt": "2026-11-03 23:06:33",
+    "ExpiresAt": "2099-12-31 23:59:59",
+    "MaxActivations": 1,
+    "Notes": "Test revocation",
+    "IsRevoked": false,
+    "ActivatedMachines": [
+      {
+        "Hwid": "TEST-HWID-REVOKE",
+        "MachineName": "PC-REVOKE-TEST",
+        "ActivatedAt": "2026-11-03 23:06:33"
+      }
+    ]
+  },
+  {
+    "Key": "DPCC-VIP8-8888-PRO9-9999",
+    "CustomerName": "Admin Demo VIP",
+    "PlanType": "Vĩnh viễn",
+    "DaysValid": 36500,
+    "CreatedAt": "2026-11-03 22:49:38",
+    "ExpiresAt": "2099-12-31 23:59:59",
+    "MaxActivations": 5,
+    "Notes": "Key demo vĩnh viễn mặc định",
+    "IsRevoked": false,
+    "ActivatedMachines": []
+  }
+]
