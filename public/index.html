@@ -3,558 +3,843 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bảng Quản Trị Bản Quyền - Daily PC Cleaner PRO</title>
+  <title>Bảng Giá Bản Quyền Daily PC Cleaner PRO - Dọn Rác & Tăng Tốc Windows</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Inter', sans-serif; }
-    .badge-active { background-color: #DCFCE7; color: #15803D; }
-    .badge-revoked { background-color: #FEE2E2; color: #B91C1C; }
-    .badge-expired { background-color: #FEF3C7; color: #B45309; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .gradient-border {
+      position: relative;
+      border: 2px solid transparent;
+      background-clip: padding-box;
+    }
+    .gradient-border::after {
+      position: absolute;
+      top: -2px; bottom: -2px;
+      left: -2px; right: -2px;
+      background: linear-gradient(135deg, #0d9488, #3b82f6, #8b5cf6);
+      content: '';
+      z-index: -1;
+      border-radius: 1.5rem;
+    }
   </style>
 </head>
-<body class="bg-slate-50 min-h-screen text-slate-800">
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col justify-between">
 
-  <!-- TOP HEADER -->
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+  <!-- TOP NAV -->
+  <header class="bg-white/90 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-xl shadow-xs">
-          🛡️
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-white shadow-md text-xl">
+          🧹
         </div>
         <div>
-          <h1 class="text-base font-bold text-slate-900 leading-tight">Daily PC Cleaner PRO</h1>
-          <p class="text-xs text-slate-500">Hệ Thống Quản Trị Bản Quyền (Netlify Serverless)</p>
+          <span class="font-extrabold text-slate-900 text-lg tracking-tight">Daily PC Cleaner <span class="text-teal-600">PRO</span></span>
+          <span class="hidden sm:inline-block ml-2 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-teal-50 text-teal-700 border border-teal-200">v1.0 Windows</span>
         </div>
       </div>
 
       <div class="flex items-center space-x-3">
-        <button onclick="fetchKeys()" title="Làm mới dữ liệu"
-          class="p-2 text-slate-500 hover:text-teal-700 hover:bg-slate-100 rounded-lg transition cursor-pointer">
-          <span class="text-lg">🔄</span>
-        </button>
-        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-teal-50 text-teal-700 border border-teal-200">
-          <span class="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></span>
-          admin
-        </span>
-        <button onclick="logout()"
-          class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 transition cursor-pointer">
-          Đăng xuất
-        </button>
+        <a href="#pricing" class="hidden sm:inline-flex text-sm font-semibold text-slate-600 hover:text-teal-600 transition">Bảng Giá</a>
+        <a href="#comparison" class="hidden sm:inline-flex text-sm font-semibold text-slate-600 hover:text-teal-600 transition">So Sánh Tính Năng</a>
+        <a href="/login.html" class="text-xs font-medium px-3.5 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 transition flex items-center gap-1.5">
+          <span>🔒 Quản Trị</span>
+        </a>
       </div>
     </div>
   </header>
 
-  <!-- MAIN CONTAINER -->
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
-    <!-- METRICS CARDS -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-      <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-        <div class="flex items-center justify-between mb-3">
-          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tổng số Key</span>
-          <span class="w-8 h-8 rounded-lg bg-teal-50 text-teal-700 flex items-center justify-center text-sm">🔑</span>
+  <!-- HERO SECTION -->
+  <main class="flex-grow">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-16">
+      
+      <!-- HEADER BANNER -->
+      <div class="text-center max-w-3xl mx-auto mb-10">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-teal-50 border border-teal-200 text-teal-700 text-xs font-bold uppercase tracking-wider mb-4 shadow-xs">
+          <span>✨</span> Mở Khóa Toàn Diện Tốc Độ Máy Tính Của Bạn
         </div>
-        <div class="text-2xl font-bold text-slate-900" id="statTotalKeys">0</div>
-        <div class="text-xs text-slate-500 mt-1">Đã khởi tạo trong hệ thống</div>
+        <h1 class="text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
+          Nâng cấp <span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-emerald-600">Daily PC Cleaner PRO</span>
+        </h1>
+        <p class="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed">
+          Giải phóng RAM tự động, dọn dẹp tập tin rác chuyên sâu, quản lý khởi động và tối ưu hóa Windows 10/11 mượt mà như mới.
+        </p>
+
+        <!-- PILL TOGGLE (ChatGPT Style) -->
+        <div class="inline-flex p-1 bg-slate-200/80 rounded-full mt-8 shadow-inner" id="segmentToggle">
+          <button id="tabPersonal" onclick="setSegment('personal')"
+            class="px-5 py-2 rounded-full text-sm font-bold transition shadow-xs bg-white text-slate-900">
+            Cá nhân (Personal)
+          </button>
+          <button id="tabBusiness" onclick="setSegment('business')"
+            class="px-5 py-2 rounded-full text-sm font-medium transition text-slate-600 hover:text-slate-900">
+            Doanh nghiệp / Đội ngũ
+          </button>
+        </div>
       </div>
 
-      <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-        <div class="flex items-center justify-between mb-3">
-          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đang hoạt động</span>
-          <span class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center text-sm">✅</span>
+      <!-- PRICING CARDS GRID -->
+      <div id="pricing" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-5 items-stretch mb-20">
+
+        <!-- PLAN 1: DÙNG THỬ 1 NGÀY -->
+        <div class="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Trải nghiệm</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">1 LẦN DUY NHẤT</span>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900">Dùng Thử 1 Ngày</h3>
+            <p class="text-xs text-slate-500 mt-1">Trải nghiệm đầy đủ sức mạnh tối ưu PC trong 24 giờ.</p>
+
+            <div class="my-6 pt-4 border-t border-slate-100">
+              <div class="flex items-baseline gap-2">
+                <span class="line-through text-slate-400 text-sm">₫29.000</span>
+                <span class="text-3xl font-extrabold text-slate-900">0đ</span>
+              </div>
+              <span class="text-xs text-slate-500">Miễn phí trải nghiệm 24h</span>
+            </div>
+
+            <button onclick="openCheckout('trial-1d', 'Dùng Thử 1 Ngày (24h)', 0, '1 lần duy nhất')"
+              class="w-full py-2.5 px-4 rounded-xl font-bold text-sm bg-slate-100 hover:bg-slate-200 text-slate-800 transition cursor-pointer mb-6">
+              Dùng Thử Miễn Phí
+            </button>
+
+            <ul class="space-y-3 text-xs text-slate-600">
+              <li class="flex items-center gap-2">
+                <span class="text-emerald-500 font-bold">✓</span> Mở khóa dọn rác chuyên sâu
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="text-emerald-500 font-bold">✓</span> Giải phóng bộ nhớ RAM tức thì
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="text-emerald-500 font-bold">✓</span> Quét tập tin lớn & khởi động
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="text-slate-400">⏱</span> Thời hạn: 24 giờ
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="text-slate-400">💻</span> 1 thiết bị máy tính
+              </li>
+            </ul>
+          </div>
+          <div class="mt-6 pt-4 border-t border-slate-100 text-[11px] text-slate-400">
+            Mỗi khách hàng được thử 1 lần
+          </div>
         </div>
-        <div class="text-2xl font-bold text-emerald-600" id="statActiveKeys">0</div>
-        <div class="text-xs text-slate-500 mt-1">Sẵn sàng hoặc đang dùng</div>
+
+        <!-- PLAN 2: DÙNG THỬ 3 NGÀY -->
+        <div class="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-bold text-teal-600 uppercase tracking-wider">Đánh giá sâu</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200">-70%</span>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900">Dùng Thử 3 Ngày</h3>
+            <p class="text-xs text-slate-500 mt-1">Đánh giá hiệu năng và sự mượt mà bền bỉ trong 72 giờ.</p>
+
+            <div class="my-6 pt-4 border-t border-slate-100">
+              <div class="flex items-baseline gap-2">
+                <span class="line-through text-slate-400 text-sm">₫69.000</span>
+                <span class="text-3xl font-extrabold text-teal-700">19k</span>
+              </div>
+              <span class="text-xs text-slate-500">Dùng thử trọn vẹn 3 ngày</span>
+            </div>
+
+            <button onclick="openCheckout('trial-3d', 'Dùng Thử 3 Ngày (72h)', 19000, '1 lần duy nhất')"
+              class="w-full py-2.5 px-4 rounded-xl font-bold text-sm bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 transition cursor-pointer mb-6">
+              Chọn Gói 3 Ngày
+            </button>
+
+            <ul class="space-y-3 text-xs text-slate-600">
+              <li class="flex items-center gap-2">
+                <span class="text-emerald-500 font-bold">✓</span> Toàn bộ tính năng PRO cao cấp
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="text-emerald-500 font-bold">✓</span> Tự động dọn RAM ngầm
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="text-emerald-500 font-bold">✓</span> Dọn WinSxS & Windows Update
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="text-emerald-500 font-bold">✓</span> Tinh chỉnh Registry tăng tốc
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="text-slate-400">⏱</span> Thời hạn: 3 ngày
+              </li>
+            </ul>
+          </div>
+          <div class="mt-6 pt-4 border-t border-slate-100 text-[11px] text-slate-400">
+            Thanh toán một lần
+          </div>
+        </div>
+
+        <!-- PLAN 3: GÓI 30 NGÀY -->
+        <div class="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Hàng tháng</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">-60%</span>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900">Gói 30 Ngày</h3>
+            <p class="text-xs text-slate-500 mt-1">Duy trì máy tính mát mẻ, sạch sẽ và mượt mà mỗi ngày.</p>
+
+            <div class="my-6 pt-4 border-t border-slate-100">
+              <div class="flex items-baseline gap-2">
+                <span class="line-through text-slate-400 text-sm">₫120.000</span>
+                <span class="text-3xl font-extrabold text-slate-900">49k</span>
+              </div>
+              <span class="text-xs text-slate-500">Chỉ ~1.600đ mỗi ngày</span>
+            </div>
+
+            <button onclick="openCheckout('monthly-30d', 'Gói 30 Ngày (1 Tháng)', 49000, '30 ngày')"
+              class="w-full py-2.5 px-4 rounded-xl font-bold text-sm bg-slate-900 hover:bg-slate-800 text-white transition cursor-pointer mb-6">
+              Mua Gói 30 Ngày
+            </button>
+
+            <ul class="space-y-3 text-xs text-slate-600">
+              <li class="flex items-center gap-2">
+                <span class="text-emerald-500 font-bold">✓</span> Toàn bộ quyền lợi PRO
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="text-emerald-500 font-bold">✓</span> Đặt lịch tự động dọn hàng ngày
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="text-emerald-500 font-bold">✓</span> Tối ưu RAM thời gian thực
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="text-emerald-500 font-bold">✓</span> Cập nhật phiên bản mới liên tục
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="text-slate-400">💻</span> 1 thiết bị máy tính
+              </li>
+            </ul>
+          </div>
+          <div class="mt-6 pt-4 border-t border-slate-100 text-[11px] text-slate-400">
+            Không tự động trừ tiền gia hạn
+          </div>
+        </div>
+
+        <!-- PLAN 4: GÓI 1 NĂM (BEST SELLER) -->
+        <div class="relative bg-gradient-to-b from-teal-900 via-teal-800 to-slate-900 text-white rounded-3xl p-6 shadow-xl border-2 border-teal-500/80 flex flex-col justify-between transform md:-translate-y-2">
+          <!-- BADGE POPULAR -->
+          <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-extrabold text-[11px] tracking-wide shadow-md whitespace-nowrap">
+            ⭐ KHUYÊN DÙNG • TIẾT KIỆM 75%
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-3 mt-1">
+              <span class="text-xs font-bold text-teal-300 uppercase tracking-wider">Bán chạy nhất</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-500/30 text-teal-200 border border-teal-400/30">1 NĂM (365 NGÀY)</span>
+            </div>
+            <h3 class="text-2xl font-extrabold text-white">Gói 1 Năm</h3>
+            <p class="text-xs text-teal-100/80 mt-1">Lựa chọn của hơn 85% người dùng máy tính và văn phòng.</p>
+
+            <div class="my-6 pt-4 border-t border-teal-700/60">
+              <div class="flex items-baseline gap-2">
+                <span class="line-through text-teal-300/60 text-sm">₫599.000</span>
+                <span class="text-4xl font-extrabold text-white">149k</span>
+              </div>
+              <span class="text-xs text-teal-200">Chỉ ~12.000đ / tháng (Rẻ như cốc trà đá)</span>
+            </div>
+
+            <button onclick="openCheckout('yearly-365d', 'Gói 1 Năm (365 Ngày)', 149000, '1 năm')"
+              class="w-full py-3 px-4 rounded-xl font-bold text-sm bg-gradient-to-r from-teal-400 to-emerald-400 hover:from-teal-300 hover:to-emerald-300 text-slate-950 transition cursor-pointer mb-6 shadow-lg shadow-teal-500/20 flex items-center justify-center gap-1.5">
+              <span>✦</span> Nhận Ưu Đãi 1 Năm
+            </button>
+
+            <ul class="space-y-3 text-xs text-teal-100">
+              <li class="flex items-center gap-2">
+                <span class="text-emerald-400 font-bold">✓</span> <strong>Dùng trọn vẹn 365 ngày</strong>
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="text-emerald-400 font-bold">✓</span> <strong>Kích hoạt 2 máy tính</strong> (PC & Laptop)
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="text-emerald-400 font-bold">✓</span> Tối ưu RAM thông minh chạy ngầm
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="text-emerald-400 font-bold">✓</span> Đặt lịch tự động dọn rác hàng ngày
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="text-emerald-400 font-bold">✓</span> Hỗ trợ kỹ thuật ưu tiên 24/7
+              </li>
+            </ul>
+          </div>
+          <div class="mt-6 pt-4 border-t border-teal-700/60 text-[11px] text-teal-300/70">
+            Bảo hành bản quyền 1 đổi 1 suốt 1 năm
+          </div>
+        </div>
+
+        <!-- PLAN 5: VĨNH VIỄN (LIFETIME) -->
+        <div class="bg-white rounded-3xl p-6 border-2 border-amber-300 shadow-md hover:shadow-lg transition flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-bold text-amber-600 uppercase tracking-wider">VIP Trọn Đời</span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">LIFETIME</span>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900">Gói Vĩnh Viễn</h3>
+            <p class="text-xs text-slate-500 mt-1">Đầu tư 1 lần duy nhất, sở hữu mãi mãi không lo gia hạn.</p>
+
+            <div class="my-6 pt-4 border-t border-slate-100">
+              <div class="flex items-baseline gap-2">
+                <span class="line-through text-slate-400 text-sm">₫999.000</span>
+                <span class="text-3xl font-extrabold text-amber-600">299k</span>
+              </div>
+              <span class="text-xs text-slate-500">Thanh toán 1 lần dùng trọn đời</span>
+            </div>
+
+            <button onclick="openCheckout('lifetime', 'Gói Vĩnh Viễn (Lifetime)', 299000, 'Vĩnh viễn')"
+              class="w-full py-2.5 px-4 rounded-xl font-bold text-sm bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white transition cursor-pointer mb-6 shadow-sm shadow-amber-500/20">
+              👑 Sở Hữu Vĩnh Viễn
+            </button>
+
+            <ul class="space-y-3 text-xs text-slate-600">
+              <li class="flex items-center gap-2">
+                <span class="text-amber-500 font-bold">✓</span> <strong>Sử dụng trọn đời (Vĩnh viễn)</strong>
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="text-amber-500 font-bold">✓</span> <strong>Kích hoạt tối đa 5 máy tính</strong>
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="text-amber-500 font-bold">✓</span> Đổi máy tính miễn phí khi thay máy
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="text-amber-500 font-bold">✓</span> Cấp token kích hoạt Offline
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="text-amber-500 font-bold">✓</span> Hỗ trợ UltraViewer / Zalo trực tiếp
+              </li>
+            </ul>
+          </div>
+          <div class="mt-6 pt-4 border-t border-slate-100 text-[11px] text-amber-600 font-medium">
+            Tặng miễn phí các bản cập nhật vĩnh viễn
+          </div>
+        </div>
+
       </div>
 
-      <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-        <div class="flex items-center justify-between mb-3">
-          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đã thu hồi</span>
-          <span class="w-8 h-8 rounded-lg bg-red-50 text-red-700 flex items-center justify-center text-sm">🚫</span>
+      <!-- FEATURE COMPARISON TABLE (ChatGPT Plus Style) -->
+      <div id="comparison" class="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200/90 shadow-sm max-w-5xl mx-auto">
+        <div class="text-center mb-8">
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">So Sánh Tính Năng Chi Tiết</h2>
+          <p class="text-sm text-slate-500 mt-2">Xem chi tiết sự khác biệt giữa Bản Miễn Phí và Bản Quyền PRO</p>
         </div>
-        <div class="text-2xl font-bold text-red-600" id="statRevokedKeys">0</div>
-        <div class="text-xs text-slate-500 mt-1">Đã bị khóa quyền truy cập</div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm border-collapse">
+            <thead>
+              <tr class="border-b border-slate-200 text-slate-400 text-xs uppercase tracking-wider">
+                <th class="py-4 px-4 font-semibold w-1/2">Tính Năng / Công Cụ</th>
+                <th class="py-4 px-4 font-semibold text-center text-slate-600">Bản Miễn Phí</th>
+                <th class="py-4 px-4 font-bold text-center text-teal-700 bg-teal-50/50 rounded-t-xl">Bản PRO</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-slate-700">
+              <tr>
+                <td class="py-3.5 px-4 font-medium">Dọn dẹp Temp, Thùng Rác (%TEMP%, Recycle Bin)</td>
+                <td class="py-3.5 px-4 text-center text-emerald-600 font-bold">✓</td>
+                <td class="py-3.5 px-4 text-center text-teal-700 font-bold bg-teal-50/50">✓</td>
+              </tr>
+              <tr>
+                <td class="py-3.5 px-4 font-medium">Dọn cache Chrome, Edge, Cốc Cốc, Brave</td>
+                <td class="py-3.5 px-4 text-center text-emerald-600 font-bold">✓</td>
+                <td class="py-3.5 px-4 text-center text-teal-700 font-bold bg-teal-50/50">✓</td>
+              </tr>
+              <tr>
+                <td class="py-3.5 px-4 font-medium">Tối ưu hóa & giải phóng RAM (Working Set Trim)</td>
+                <td class="py-3.5 px-4 text-center text-slate-300">✕ Khóa</td>
+                <td class="py-3.5 px-4 text-center text-teal-700 font-bold bg-teal-50/50">✓ Tức thì</td>
+              </tr>
+              <tr>
+                <td class="py-3.5 px-4 font-medium">Quản lý & Tắt/Bật ứng dụng khởi động cùng Windows</td>
+                <td class="py-3.5 px-4 text-center text-slate-300">✕ Khóa</td>
+                <td class="py-3.5 px-4 text-center text-teal-700 font-bold bg-teal-50/50">✓ Đầy đủ</td>
+              </tr>
+              <tr>
+                <td class="py-3.5 px-4 font-medium">Quét và phân loại tập tin chiếm dụng ổ đĩa lớn (>100MB)</td>
+                <td class="py-3.5 px-4 text-center text-slate-300">✕ Khóa</td>
+                <td class="py-3.5 px-4 text-center text-teal-700 font-bold bg-teal-50/50">✓ Mở khóa</td>
+              </tr>
+              <tr>
+                <td class="py-3.5 px-4 font-medium">Dọn dẹp chuyên sâu WinSxS & Windows Update Cache</td>
+                <td class="py-3.5 px-4 text-center text-slate-300">✕ Khóa</td>
+                <td class="py-3.5 px-4 text-center text-teal-700 font-bold bg-teal-50/50">✓ Giải phóng GBs</td>
+              </tr>
+              <tr>
+                <td class="py-3.5 px-4 font-medium">Tinh chỉnh hệ thống: Tăng tốc Menu, Giảm trễ ứng dụng</td>
+                <td class="py-3.5 px-4 text-center text-slate-300">✕ Khóa</td>
+                <td class="py-3.5 px-4 text-center text-teal-700 font-bold bg-teal-50/50">✓ An toàn 100%</td>
+              </tr>
+              <tr>
+                <td class="py-3.5 px-4 font-medium">Lập lịch tự động dọn dẹp hàng ngày / khi đăng nhập</td>
+                <td class="py-3.5 px-4 text-center text-slate-300">✕ Khóa</td>
+                <td class="py-3.5 px-4 text-center text-teal-700 font-bold bg-teal-50/50">✓ Chạy ngầm</td>
+              </tr>
+              <tr>
+                <td class="py-3.5 px-4 font-medium">Bộ chuyển đổi 5 Giao diện (Theme Switcher)</td>
+                <td class="py-3.5 px-4 text-center text-slate-300">✕ Mặc định</td>
+                <td class="py-3.5 px-4 text-center text-teal-700 font-bold bg-teal-50/50">✓ 5 Theme</td>
+              </tr>
+              <tr>
+                <td class="py-3.5 px-4 font-medium">Kích hoạt Offline không cần Internet</td>
+                <td class="py-3.5 px-4 text-center text-slate-300">✕ Không</td>
+                <td class="py-3.5 px-4 text-center text-teal-700 font-bold bg-teal-50/50">✓ Có hỗ trợ</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-        <div class="flex items-center justify-between mb-3">
-          <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Máy đã kích hoạt</span>
-          <span class="w-8 h-8 rounded-lg bg-sky-50 text-sky-700 flex items-center justify-center text-sm">💻</span>
-        </div>
-        <div class="text-2xl font-bold text-sky-600" id="statTotalMachines">0</div>
-        <div class="text-xs text-slate-500 mt-1">Thiết bị PC khách online</div>
-      </div>
     </div>
-
-    <!-- ACTION & FILTER BAR -->
-    <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
-      <div class="flex flex-1 w-full md:w-auto items-center gap-3">
-        <div class="relative w-full max-w-sm">
-          <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">🔍</span>
-          <input type="text" id="searchInput" oninput="applyFilters()"
-            placeholder="Tìm theo mã Key hoặc tên khách..."
-            class="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-300 focus:border-teal-600 focus:ring-1 focus:ring-teal-600 outline-none text-sm">
-        </div>
-
-        <select id="statusFilter" onchange="applyFilters()"
-          class="py-2 px-3 rounded-xl border border-slate-300 text-sm outline-none focus:border-teal-600 bg-white">
-          <option value="ALL">Tất cả trạng thái</option>
-          <option value="ACTIVE">Đang hoạt động</option>
-          <option value="REVOKED">Đã thu hồi</option>
-        </select>
-      </div>
-
-      <div class="flex items-center gap-2 w-full md:w-auto justify-end">
-        <button onclick="openOfflineModal()"
-          class="px-3.5 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 text-sm font-semibold transition flex items-center gap-1.5 cursor-pointer">
-          <span>⚙️</span>
-          <span>Tạo Token Offline</span>
-        </button>
-
-        <button onclick="openCreateModal()"
-          class="px-4 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-sm font-semibold shadow-xs hover:shadow transition flex items-center gap-1.5 cursor-pointer">
-          <span>+</span>
-          <span>Tạo Key Mới</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- KEYS TABLE -->
-    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm text-slate-600">
-          <thead class="bg-slate-50 border-b border-slate-200 text-xs font-semibold uppercase text-slate-500 tracking-wider">
-            <tr>
-              <th class="py-3.5 px-4">Mã Key Bản Quyền</th>
-              <th class="py-3.5 px-4">Khách Hàng</th>
-              <th class="py-3.5 px-4">Gói Bản Quyền</th>
-              <th class="py-3.5 px-4">Hạn Sử Dụng</th>
-              <th class="py-3.5 px-4">Số Máy</th>
-              <th class="py-3.5 px-4">Trạng Thái</th>
-              <th class="py-3.5 px-4 text-right">Thao Tác</th>
-            </tr>
-          </thead>
-          <tbody id="keysTableBody" class="divide-y divide-slate-100">
-            <tr>
-              <td colspan="7" class="py-8 text-center text-slate-400">Đang tải dữ liệu bản quyền...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
   </main>
 
-  <!-- MODAL: TẠO KEY MỚI -->
-  <div id="createModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200">
-      <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
-        <h3 class="text-lg font-bold text-slate-900">✨ Tạo Key Bản Quyền PRO Mới</h3>
-        <button onclick="closeCreateModal()" class="text-slate-400 hover:text-slate-600 text-xl cursor-pointer">✕</button>
-      </div>
-
-      <form id="createKeyForm" onsubmit="handleCreateKey(event)" class="space-y-4">
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Tên khách hàng / Đại lý</label>
-          <input type="text" id="newCustomer" required placeholder="Ví dụ: Nguyễn Văn A"
-            class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm outline-none focus:border-teal-600">
+  <!-- CHECKOUT & PAYMENT MODAL -->
+  <div id="checkoutModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden transform transition-all">
+      
+      <!-- STEP 1: CUSTOMER FORM -->
+      <div id="stepForm" class="p-6 sm:p-8">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+          <div class="flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 font-bold flex items-center justify-center text-sm border border-teal-200">1</span>
+            <h3 class="font-bold text-slate-900 text-lg">Thông Tin Đặt Hàng</h3>
+          </div>
+          <button onclick="closeCheckout()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1">✕</button>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <!-- SELECTED PLAN SUMMARY -->
+        <div class="p-4 rounded-2xl bg-teal-50/60 border border-teal-100 mb-5 flex items-center justify-between">
           <div>
-            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Gói thời hạn</label>
-            <select id="newPlanSelect" onchange="onPlanSelectChange()"
-              class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm outline-none focus:border-teal-600 bg-white">
-              <option value="1">Dùng thử 1 ngày (24h)</option>
-              <option value="3" selected>Dùng thử 3 ngày</option>
-              <option value="7">Gói 7 ngày</option>
-              <option value="30">Gói 30 ngày (1 tháng)</option>
-              <option value="365">Gói 1 năm (365 ngày)</option>
-              <option value="0">Vĩnh viễn (Lifetime)</option>
-            </select>
+            <span class="text-xs font-bold text-teal-600 uppercase tracking-wider">Gói đã chọn</span>
+            <h4 class="font-extrabold text-slate-900 text-base" id="summaryPlanName">-</h4>
+            <span class="text-xs text-slate-500" id="summaryPlanDuration">-</span>
           </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Số máy tối đa</label>
-            <input type="number" id="newMaxActivations" value="1" min="1" max="100"
-              class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm outline-none focus:border-teal-600">
+          <div class="text-right">
+            <span class="text-xs text-slate-400 block">Thành tiền</span>
+            <span class="text-2xl font-black text-teal-700" id="summaryPrice">-</span>
           </div>
         </div>
 
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Ghi chú (Tùy chọn)</label>
-          <input type="text" id="newNotes" placeholder="Ví dụ: Khách mua qua Zalo, ưu đãi sinh nhật..."
-            class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm outline-none focus:border-teal-600">
-        </div>
+        <form id="orderForm" onsubmit="submitOrder(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold uppercase text-slate-600 mb-1.5">
+              Địa chỉ Gmail của bạn <span class="text-red-500">* (Bắt buộc)</span>
+            </label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">📧</span>
+              <input type="email" id="customerEmail" required
+                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 outline-none text-sm transition"
+                placeholder="vidu@gmail.com">
+            </div>
+            <p class="text-[11px] text-teal-700 mt-1 font-medium">
+              💡 Mã bản quyền (License Key) và hướng dẫn kích hoạt sẽ được gửi tự động tới Gmail này.
+            </p>
+          </div>
 
-        <div id="createdKeyResult" class="hidden p-3 rounded-xl bg-teal-50 border border-teal-200">
-          <div class="text-xs text-teal-700 font-semibold mb-1">Key vừa tạo thành công:</div>
-          <div class="flex items-center justify-between">
-            <span id="createdKeyText" class="font-mono text-base font-bold text-teal-900 select-all"></span>
-            <button type="button" onclick="copyCreatedKey()" class="text-xs bg-teal-700 text-white px-2.5 py-1 rounded-lg hover:bg-teal-800 cursor-pointer">
-              Sao chép
+          <div>
+            <label class="block text-xs font-bold uppercase text-slate-600 mb-1.5">
+              Họ tên khách hàng (Tùy chọn)
+            </label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">👤</span>
+              <input type="text" id="customerName"
+                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 outline-none text-sm transition"
+                placeholder="Nguyễn Văn A">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase text-slate-600 mb-1.5">
+              Số điện thoại / Zalo (Tùy chọn để hỗ trợ nhanh)
+            </label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">📞</span>
+              <input type="tel" id="customerPhone"
+                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:border-teal-600 focus:ring-2 focus:ring-teal-600/20 outline-none text-sm transition"
+                placeholder="0912345678">
+            </div>
+          </div>
+
+          <div id="formErrorAlert" class="hidden p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs"></div>
+
+          <div class="pt-2">
+            <button type="submit" id="btnSubmitOrder"
+              class="w-full py-3.5 px-4 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-sm shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 cursor-pointer">
+              <span>Tiến Hành Đặt Hàng & Thanh Toán</span>
+              <span>→</span>
             </button>
           </div>
-        </div>
-
-        <div class="pt-4 border-t border-slate-100 flex justify-end gap-2">
-          <button type="button" onclick="closeCreateModal()"
-            class="px-4 py-2 rounded-xl border border-slate-300 text-sm text-slate-600 hover:bg-slate-100 cursor-pointer">
-            Đóng
-          </button>
-          <button type="submit" id="btnSubmitKey"
-            class="px-4 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-sm font-semibold cursor-pointer">
-            Tạo Key Ngay
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- MODAL: TOKEN OFFLINE -->
-  <div id="offlineModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200">
-      <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
-        <h3 class="text-lg font-bold text-slate-900">🔑 Tạo Token Kích Hoạt Offline</h3>
-        <button onclick="closeOfflineModal()" class="text-slate-400 hover:text-slate-600 text-xl cursor-pointer">✕</button>
+        </form>
       </div>
 
-      <form id="offlineTokenForm" onsubmit="handleGenerateOfflineToken(event)" class="space-y-4">
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Mã Key Bản Quyền</label>
-          <input type="text" id="offlineKey" required placeholder="Ví dụ: PRO-XXXX-XXXX-XXXX"
-            class="w-full px-3 py-2 rounded-xl border border-slate-300 font-mono text-sm uppercase outline-none focus:border-teal-600">
+      <!-- STEP 2: VIETQR PAYMENT & COUNTDOWN TIMER -->
+      <div id="stepPayment" class="hidden p-6 sm:p-8">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+          <div class="flex items-center gap-2">
+            <span class="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 font-bold flex items-center justify-center text-sm border border-teal-200">2</span>
+            <h3 class="font-bold text-slate-900 text-base">Thanh Toán Chuyển Khoản QR</h3>
+          </div>
+          <button onclick="closeCheckout()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1">✕</button>
         </div>
 
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Mã HWID máy khách (Machine ID)</label>
-          <input type="text" id="offlineHwid" required placeholder="Khách gửi mã HWID trên ứng dụng Daily PC Cleaner"
-            class="w-full px-3 py-2 rounded-xl border border-slate-300 font-mono text-sm outline-none focus:border-teal-600">
+        <!-- COUNTDOWN TIMER BAR -->
+        <div class="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 mb-5">
+          <div class="flex items-center justify-between text-xs font-bold text-amber-800 mb-1.5">
+            <span class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+              Thời gian giao dịch đếm ngược:
+            </span>
+            <span class="text-base font-extrabold text-amber-700 font-mono" id="countdownClock">10:00</span>
+          </div>
+          <div class="w-full bg-amber-200 h-2 rounded-full overflow-hidden">
+            <div id="countdownProgress" class="bg-amber-600 h-full w-full transition-all duration-1000"></div>
+          </div>
+          <p class="text-[10px] text-amber-700/80 mt-1.5">
+            ⚠️ Hết thời gian này giao dịch sẽ tự động bị hủy để bảo mật.
+          </p>
         </div>
 
-        <div id="offlineTokenResult" class="hidden p-3 rounded-xl bg-slate-50 border border-slate-200">
-          <div class="text-xs text-slate-600 font-semibold mb-1">Mã kích hoạt Offline (Gửi cho khách nhập vào):</div>
-          <textarea id="offlineTokenText" readonly rows="3"
-            class="w-full p-2 text-xs font-mono bg-white border border-slate-300 rounded-lg outline-none select-all"></textarea>
-          <button type="button" onclick="copyOfflineToken()"
-            class="mt-2 text-xs bg-slate-800 text-white px-3 py-1.5 rounded-lg hover:bg-slate-900 cursor-pointer">
-            📋 Sao chép mã Offline Token
+        <!-- QR CODE & TRANSFER DETAILS -->
+        <div class="text-center mb-5">
+          <div class="inline-block p-3 bg-white rounded-2xl border-2 border-slate-200 shadow-md">
+            <img id="qrImage" src="" alt="Mã VietQR" class="w-48 h-48 mx-auto object-contain rounded-lg">
+          </div>
+          <p class="text-[11px] text-slate-500 mt-2">Mở app Ngân hàng hoặc ví điện tử bất kỳ quét mã QR trên</p>
+        </div>
+
+        <div class="space-y-2.5 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-200/80 mb-5">
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500">Ngân hàng:</span>
+            <span class="font-bold text-slate-800" id="bankNameDisplay">-</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500">Số tài khoản:</span>
+            <div class="flex items-center gap-2">
+              <span class="font-mono font-bold text-slate-900 text-sm" id="bankAccDisplay">-</span>
+              <button onclick="copyText(document.getElementById('bankAccDisplay').innerText, this)"
+                class="px-2 py-0.5 rounded bg-white border border-slate-300 text-[10px] text-slate-600 hover:bg-slate-100 font-medium">Copy</button>
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500">Chủ tài khoản:</span>
+            <span class="font-bold text-slate-800 uppercase" id="bankOwnerDisplay">-</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500">Số tiền:</span>
+            <div class="flex items-center gap-2">
+              <span class="font-mono font-bold text-teal-700 text-sm" id="payAmountDisplay">-</span>
+              <button onclick="copyText(currentOrderAmount.toString(), this)"
+                class="px-2 py-0.5 rounded bg-white border border-slate-300 text-[10px] text-slate-600 hover:bg-slate-100 font-medium">Copy</button>
+            </div>
+          </div>
+          <div class="flex items-center justify-between pt-2 border-t border-slate-200">
+            <span class="text-slate-500 font-semibold">Nội dung CK:</span>
+            <div class="flex items-center gap-2">
+              <span class="font-mono font-extrabold text-amber-700 text-sm bg-amber-100/70 px-2 py-0.5 rounded" id="payCodeDisplay">-</span>
+              <button onclick="copyText(document.getElementById('payCodeDisplay').innerText, this)"
+                class="px-2 py-0.5 rounded bg-amber-200 text-amber-900 border border-amber-300 text-[10px] font-bold hover:bg-amber-300">Copy</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-2.5">
+          <button onclick="confirmPaymentDone()" id="btnConfirmPaid"
+            class="flex-1 py-3 px-4 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2 cursor-pointer">
+            <span>✅ Tôi Đã Chuyển Khoản Thành Công</span>
+          </button>
+          <button onclick="cancelCurrentOrder()"
+            class="py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-xs transition cursor-pointer">
+            Hủy Bỏ
           </button>
         </div>
-
-        <div class="pt-4 border-t border-slate-100 flex justify-end gap-2">
-          <button type="button" onclick="closeOfflineModal()"
-            class="px-4 py-2 rounded-xl border border-slate-300 text-sm text-slate-600 hover:bg-slate-100 cursor-pointer">
-            Đóng
-          </button>
-          <button type="submit"
-            class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold cursor-pointer">
-            Tạo Mã Offline
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- MODAL: DANH SÁCH MÁY KÍCH HOẠT -->
-  <div id="machinesModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
-        <h3 class="text-base font-bold text-slate-900">💻 Thiết Bị Đã Kích Hoạt</h3>
-        <button onclick="closeMachinesModal()" class="text-slate-400 hover:text-slate-600 text-xl cursor-pointer">✕</button>
       </div>
-      <div id="machinesListContent" class="space-y-3 py-2 max-h-80 overflow-y-auto"></div>
-      <div class="pt-3 border-t border-slate-100 text-right">
-        <button onclick="closeMachinesModal()" class="px-4 py-1.5 rounded-xl border border-slate-300 text-xs text-slate-600 hover:bg-slate-100">
-          Đóng
+
+      <!-- STEP 3: SUCCESS & AWAITING CONFIRMATION -->
+      <div id="stepSuccess" class="hidden p-6 sm:p-8 text-center">
+        <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl mx-auto mb-4 animate-bounce">
+          🎉
+        </div>
+        <h3 class="text-2xl font-extrabold text-slate-900 tracking-tight">Đã Ghi Nhận Đặt Hàng Thành Công!</h3>
+        <p class="text-xs sm:text-sm text-slate-600 mt-2 max-w-sm mx-auto">
+          Mã đơn hàng của bạn: <strong class="text-teal-700 font-mono text-base" id="successOrderId">-</strong>
+        </p>
+
+        <div class="my-6 p-4 rounded-2xl bg-teal-50 border border-teal-200 text-left text-xs space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500">Gói bản quyền:</span>
+            <span class="font-bold text-slate-800" id="successPlanName">-</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500">Gmail nhận Key:</span>
+            <span class="font-bold text-teal-800" id="successEmail">-</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-slate-500">Trạng thái:</span>
+            <span class="inline-flex items-center gap-1 font-bold text-emerald-700">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Chờ gửi key qua Gmail
+            </span>
+          </div>
+        </div>
+
+        <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs text-left mb-6">
+          <p class="font-bold mb-1">📬 Bước tiếp theo:</p>
+          <p class="text-[11px] leading-relaxed text-amber-800">
+            Hệ thống đang kiểm tra giao dịch của bạn. Quản trị viên sẽ gửi mã kích hoạt bản quyền PRO cùng hướng dẫn cài đặt trực tiếp vào hộp thư Gmail của bạn trong ít phút.
+            <br><em>(Vui lòng kiểm tra cả hòm thư Spam / Thư rác nếu không thấy trong Hộp thư đến).</em>
+          </p>
+        </div>
+
+        <button onclick="closeCheckout()"
+          class="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm shadow transition">
+          Hoàn Tất & Đóng
         </button>
       </div>
+
+      <!-- STEP 4: TIMEOUT EXPIRED -->
+      <div id="stepExpired" class="hidden p-8 text-center">
+        <div class="w-16 h-16 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-3xl mx-auto mb-4">
+          ⏰
+        </div>
+        <h3 class="text-xl font-bold text-slate-900">Giao Dịch Đã Hết Hạn</h3>
+        <p class="text-xs text-slate-600 mt-2 max-w-sm mx-auto">
+          Thời gian đếm ngược 10 phút đã kết thúc. Đơn hàng đã bị hủy bỏ tự động để đảm bảo an toàn giao dịch.
+        </p>
+        <div class="mt-6">
+          <button onclick="retryCheckout()"
+            class="w-full py-3 px-4 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-bold text-sm shadow transition cursor-pointer">
+            🔄 Tạo Đơn Hàng Mới
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
 
-  <!-- JAVASCRIPT LOGIC -->
+  <!-- FOOTER -->
+  <footer class="bg-white border-t border-slate-200 py-8 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4">
+      <p class="font-semibold text-slate-700">Daily PC Cleaner PRO • Bản Quyền & Phần Mềm Tối Ưu Windows 10 & 11</p>
+      <p class="mt-1 text-slate-400">Tương thích hoàn hảo với mọi dòng máy tính PC & Laptop • Hỗ trợ 24/7</p>
+      <p class="mt-3 text-[11px] text-slate-400">© 2026 Daily PC Cleaner. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- SCRIPT LOGIC -->
   <script>
-    let allKeys = [];
+    let currentPlan = null;
+    let currentOrder = null;
+    let currentOrderAmount = 0;
+    let countdownInterval = null;
+    let remainingSeconds = 600; // 10 minutes
+    let bankInfo = {
+      bankId: 'MB',
+      bankName: 'MB Bank (Ngân hàng Quân Đội)',
+      accountNo: '0987654321',
+      accountName: 'DAILY PC CLEANER'
+    };
 
-    // Authenticate check
-    function getAuthHeaders() {
-      const token = localStorage.getItem('admin_token') || '';
-      return {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token
-      };
-    }
-
-    async function checkAuth() {
-      const token = localStorage.getItem('admin_token');
-      if (!token) {
-        window.location.href = '/login.html';
-        return false;
-      }
-      return true;
-    }
-
-    function logout() {
-      localStorage.removeItem('admin_token');
-      fetch('/api/logout').catch(() => {});
-      window.location.href = '/login.html';
-    }
-
-    // Load Keys
-    async function fetchKeys() {
+    // Load initial bank config
+    async function loadBankConfig() {
       try {
-        const res = await fetch('/api/keys', { headers: getAuthHeaders() });
-        if (res.status === 401) {
-          logout();
-          return;
-        }
+        const res = await fetch('/api/config/bank');
         const data = await res.json();
-        if (data.success && Array.isArray(data.keys)) {
-          allKeys = data.keys;
-          renderMetrics();
-          applyFilters();
+        if (data.success && data.bank) {
+          bankInfo = data.bank;
         }
-      } catch (err) {
-        console.error('Fetch keys error:', err);
+      } catch (e) { }
+    }
+    loadBankConfig();
+
+    function setSegment(mode) {
+      const p = document.getElementById('tabPersonal');
+      const b = document.getElementById('tabBusiness');
+      if (mode === 'personal') {
+        p.className = 'px-5 py-2 rounded-full text-sm font-bold transition shadow-xs bg-white text-slate-900';
+        b.className = 'px-5 py-2 rounded-full text-sm font-medium transition text-slate-600 hover:text-slate-900';
+      } else {
+        b.className = 'px-5 py-2 rounded-full text-sm font-bold transition shadow-xs bg-white text-slate-900';
+        p.className = 'px-5 py-2 rounded-full text-sm font-medium transition text-slate-600 hover:text-slate-900';
       }
     }
 
-    // Render Metrics
-    function renderMetrics() {
-      const total = allKeys.length;
-      const revoked = allKeys.filter(k => k.IsRevoked).length;
-      const active = allKeys.filter(k => !k.IsRevoked).length;
-      let totalMachines = 0;
-      allKeys.forEach(k => {
-        if (k.ActivatedMachines) totalMachines += k.ActivatedMachines.length;
-      });
+    function openCheckout(planId, planName, price, duration) {
+      currentPlan = { planId, planName, price, duration };
+      currentOrderAmount = price;
 
-      document.getElementById('statTotalKeys').innerText = total;
-      document.getElementById('statActiveKeys').innerText = active;
-      document.getElementById('statRevokedKeys').innerText = revoked;
-      document.getElementById('statTotalMachines').innerText = totalMachines;
+      document.getElementById('summaryPlanName').innerText = planName;
+      document.getElementById('summaryPlanDuration').innerText = duration;
+      document.getElementById('summaryPrice').innerText = price === 0 ? '0đ (Miễn phí)' : price.toLocaleString('vi-VN') + ' đ';
+
+      showModalStep('stepForm');
+      document.getElementById('checkoutModal').classList.remove('hidden');
     }
 
-    // Filter & Render Table
-    function applyFilters() {
-      const search = (document.getElementById('searchInput').value || '').trim().toLowerCase();
-      const status = document.getElementById('statusFilter').value;
-
-      const filtered = allKeys.filter(k => {
-        const matchSearch = k.Key.toLowerCase().includes(search) || (k.CustomerName && k.CustomerName.toLowerCase().includes(search));
-        if (!matchSearch) return false;
-        if (status === 'ACTIVE' && k.IsRevoked) return false;
-        if (status === 'REVOKED' && !k.IsRevoked) return false;
-        return true;
-      });
-
-      renderTable(filtered);
+    function closeCheckout() {
+      if (countdownInterval) clearInterval(countdownInterval);
+      document.getElementById('checkoutModal').classList.add('hidden');
     }
 
-    function renderTable(keys) {
-      const tbody = document.getElementById('keysTableBody');
-      if (!keys.length) {
-        tbody.innerHTML = '<tr><td colspan="7" class="py-8 text-center text-slate-400">Không tìm thấy mã key nào phù hợp.</td></tr>';
+    function showModalStep(stepId) {
+      ['stepForm', 'stepPayment', 'stepSuccess', 'stepExpired'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+      document.getElementById(stepId).classList.remove('hidden');
+    }
+
+    async function submitOrder(e) {
+      e.preventDefault();
+      const email = document.getElementById('customerEmail').value.trim();
+      const name = document.getElementById('customerName').value.trim();
+      const phone = document.getElementById('customerPhone').value.trim();
+      const btn = document.getElementById('btnSubmitOrder');
+      const errBox = document.getElementById('formErrorAlert');
+
+      errBox.classList.add('hidden');
+
+      if (!email || !email.includes('@')) {
+        errBox.innerText = 'Vui lòng nhập địa chỉ Gmail hợp lệ!';
+        errBox.classList.remove('hidden');
         return;
       }
 
-      tbody.innerHTML = keys.map(k => {
-        const machinesCount = k.ActivatedMachines ? k.ActivatedMachines.length : 0;
-        const maxMachines = k.MaxActivations || 1;
-        const statusBadge = k.IsRevoked
-          ? '<span class="px-2.5 py-1 rounded-full text-xs font-semibold badge-revoked">ĐÃ THU HỒI</span>'
-          : '<span class="px-2.5 py-1 rounded-full text-xs font-semibold badge-active">HOẠT ĐỘNG</span>';
-
-        return `
-          <tr class="hover:bg-slate-50/70 transition">
-            <td class="py-3 px-4 font-mono font-bold text-slate-900">
-              <div class="flex items-center gap-1.5">
-                <span>${k.Key}</span>
-                <button onclick="copyText('${k.Key}')" title="Sao chép" class="text-xs text-slate-400 hover:text-teal-700 cursor-pointer">📋</button>
-              </div>
-            </td>
-            <td class="py-3 px-4">
-              <div class="font-medium text-slate-800">${escapeHtml(k.CustomerName || 'Khách')}</div>
-              <div class="text-xs text-slate-400">${escapeHtml(k.Notes || '')}</div>
-            </td>
-            <td class="py-3 px-4 font-medium text-slate-700">${k.PlanType || 'Vĩnh viễn'}</td>
-            <td class="py-3 px-4 text-xs">
-              ${k.ExpiresAt ? `<span class="text-slate-600">${k.ExpiresAt}</span>` : '<span class="text-teal-700 font-semibold">Vĩnh viễn</span>'}
-            </td>
-            <td class="py-3 px-4">
-              <button onclick="showMachines('${k.Key}')" class="px-2 py-0.5 rounded-full text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer">
-                💻 ${machinesCount}/${maxMachines} máy
-              </button>
-            </td>
-            <td class="py-3 px-4">${statusBadge}</td>
-            <td class="py-3 px-4 text-right">
-              <div class="inline-flex items-center gap-1.5">
-                <button onclick="toggleRevoke('${k.Key}')" class="px-2 py-1 text-xs rounded-lg border ${k.IsRevoked ? 'border-teal-300 text-teal-700 hover:bg-teal-50' : 'border-red-300 text-red-700 hover:bg-red-50'} cursor-pointer">
-                  ${k.IsRevoked ? 'Mở Lại' : 'Thu Hồi'}
-                </button>
-                <button onclick="prepareOfflineModal('${k.Key}')" title="Tạo Offline Token" class="p-1 text-slate-500 hover:text-slate-900 cursor-pointer">
-                  🔑
-                </button>
-                <button onclick="deleteKey('${k.Key}')" title="Xóa" class="p-1 text-red-400 hover:text-red-700 cursor-pointer">
-                  🗑️
-                </button>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    // Toggle Revoke
-    async function toggleRevoke(key) {
-      if (!confirm(`Bạn có chắc chắn muốn thay đổi trạng thái của mã Key: ${key}?`)) return;
-      try {
-        const res = await fetch('/api/keys/revoke', {
-          method: 'POST',
-          headers: getAuthHeaders(),
-          body: JSON.stringify({ key })
-        });
-        const data = await res.json();
-        if (data.success) fetchKeys();
-      } catch (e) { alert('Lỗi: ' + e.message); }
-    }
-
-    // Delete Key
-    async function deleteKey(key) {
-      if (!confirm(`CẢNH BÁO: Xóa hoàn toàn mã Key ${key} khỏi hệ thống?`)) return;
-      try {
-        const res = await fetch('/api/keys/delete', {
-          method: 'POST',
-          headers: getAuthHeaders(),
-          body: JSON.stringify({ key })
-        });
-        const data = await res.json();
-        if (data.success) fetchKeys();
-      } catch (e) { alert('Lỗi: ' + e.message); }
-    }
-
-    // Modal Helpers
-    function openCreateModal() {
-      document.getElementById('createdKeyResult').classList.add('hidden');
-      document.getElementById('createModal').classList.remove('hidden');
-    }
-    function closeCreateModal() {
-      document.getElementById('createModal').classList.add('hidden');
-    }
-
-    function onPlanSelectChange() {
-      // Auto adjust days
-    }
-
-    async function handleCreateKey(e) {
-      e.preventDefault();
-      const customer = document.getElementById('newCustomer').value.trim();
-      const sel = document.getElementById('newPlanSelect');
-      const days = parseInt(sel.value);
-      const plan = sel.options[sel.selectedIndex].text;
-      const maxActivations = parseInt(document.getElementById('newMaxActivations').value) || 1;
-      const notes = document.getElementById('newNotes').value.trim();
-
-      const btn = document.getElementById('btnSubmitKey');
       btn.disabled = true;
+      btn.innerText = 'Đang xử lý đơn hàng...';
 
       try {
-        const res = await fetch('/api/keys/generate', {
+        const res = await fetch('/api/orders/create', {
           method: 'POST',
-          headers: getAuthHeaders(),
-          body: JSON.stringify({ customer, plan, days, maxActivations, notes })
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            customerName: name,
+            phone,
+            planId: currentPlan.planId,
+            planName: currentPlan.planName,
+            price: currentPlan.price
+          })
         });
+
         const data = await res.json();
-        if (data.success && data.key) {
-          document.getElementById('createdKeyText').innerText = data.key;
-          document.getElementById('createdKeyResult').classList.remove('hidden');
-          fetchKeys();
-        } else {
-          alert('Lỗi tạo key: ' + (data.error || ''));
+        if (!data.success) {
+          errBox.innerText = data.error || 'Có lỗi xảy ra khi tạo đơn hàng!';
+          errBox.classList.remove('hidden');
+          btn.disabled = false;
+          btn.innerText = 'Tiến Hành Đặt Hàng & Thanh Toán →';
+          return;
         }
-      } catch (err) { alert('Lỗi kết nối: ' + err.message); }
-      finally { btn.disabled = false; }
-    }
 
-    function copyCreatedKey() {
-      const key = document.getElementById('createdKeyText').innerText;
-      copyText(key);
-      alert('Đã sao chép mã Key: ' + key);
-    }
+        currentOrder = data.order;
+        if (data.bank) bankInfo = data.bank;
 
-    // Offline Token Modal
-    function openOfflineModal() {
-      document.getElementById('offlineTokenResult').classList.add('hidden');
-      document.getElementById('offlineModal').classList.remove('hidden');
-    }
-    function closeOfflineModal() {
-      document.getElementById('offlineModal').classList.add('hidden');
-    }
-    function prepareOfflineModal(key) {
-      document.getElementById('offlineKey').value = key;
-      openOfflineModal();
-    }
-
-    async function handleGenerateOfflineToken(e) {
-      e.preventDefault();
-      const key = document.getElementById('offlineKey').value.trim();
-      const hwid = document.getElementById('offlineHwid').value.trim();
-
-      try {
-        const res = await fetch('/api/keys/offline-token', {
-          method: 'POST',
-          headers: getAuthHeaders(),
-          body: JSON.stringify({ key, hwid })
-        });
-        const data = await res.json();
-        if (data.success && data.offlineToken) {
-          document.getElementById('offlineTokenText').value = data.offlineToken;
-          document.getElementById('offlineTokenResult').classList.remove('hidden');
-        } else {
-          alert('Lỗi: ' + (data.error || ''));
+        // If price is 0 (Free 1-day trial), auto complete!
+        if (currentPlan.price === 0) {
+          await fetch('/api/orders/confirm', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: currentOrder.OrderId })
+          });
+          showSuccessScreen();
+          return;
         }
-      } catch (err) { alert('Lỗi kết nối: ' + err.message); }
-    }
 
-    function copyOfflineToken() {
-      const text = document.getElementById('offlineTokenText').value;
-      copyText(text);
-      alert('Đã sao chép Offline Token!');
-    }
-
-    // Show Machines
-    function showMachines(key) {
-      const rec = allKeys.find(k => k.Key === key);
-      if (!rec) return;
-      const list = rec.ActivatedMachines || [];
-      const container = document.getElementById('machinesListContent');
-      if (!list.length) {
-        container.innerHTML = '<div class="text-sm text-slate-400 py-3 text-center">Chưa có máy tính nào kích hoạt mã Key này.</div>';
-      } else {
-        container.innerHTML = list.map((m, idx) => `
-          <div class="p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs">
-            <div class="font-bold text-slate-800">Máy #${idx + 1}: ${escapeHtml(m.MachineName || 'PC')}</div>
-            <div class="font-mono text-slate-600 mt-0.5">HWID: ${m.Hwid}</div>
-            <div class="text-slate-400 mt-1">Kích hoạt lúc: ${m.ActivatedAt}</div>
-          </div>
-        `).join('');
+        // Show VietQR & Start Countdown
+        startPaymentCountdown();
+      } catch (err) {
+        errBox.innerText = 'Không thể kết nối đến máy chủ: ' + err.message;
+        errBox.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Tiến Hành Đặt Hàng & Thanh Toán →';
       }
-      document.getElementById('machinesModal').classList.remove('hidden');
-    }
-    function closeMachinesModal() {
-      document.getElementById('machinesModal').classList.add('hidden');
     }
 
-    function copyText(txt) {
-      navigator.clipboard.writeText(txt);
-    }
-    function escapeHtml(str) {
-      return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    function startPaymentCountdown() {
+      showModalStep('stepPayment');
+
+      // Populate details
+      document.getElementById('bankNameDisplay').innerText = bankInfo.bankName || 'MB Bank';
+      document.getElementById('bankAccDisplay').innerText = bankInfo.accountNo || '0987654321';
+      document.getElementById('bankOwnerDisplay').innerText = bankInfo.accountName || 'DAILY PC CLEANER';
+      document.getElementById('payAmountDisplay').innerText = currentPlan.price.toLocaleString('vi-VN') + ' đ';
+      document.getElementById('payCodeDisplay').innerText = currentOrder.OrderId;
+
+      // Generate VietQR
+      const qrUrl = `https://img.vietqr.io/image/${bankInfo.bankId}-${bankInfo.accountNo}-compact2.png?amount=${currentPlan.price}&addInfo=${encodeURIComponent(currentOrder.OrderId)}&accountName=${encodeURIComponent(bankInfo.accountName)}`;
+      document.getElementById('qrImage').src = qrUrl;
+
+      // Start 10 min countdown (600 seconds)
+      remainingSeconds = 600;
+      updateCountdownDisplay();
+
+      if (countdownInterval) clearInterval(countdownInterval);
+      countdownInterval = setInterval(() => {
+        remainingSeconds--;
+        updateCountdownDisplay();
+        if (remainingSeconds <= 0) {
+          clearInterval(countdownInterval);
+          showModalStep('stepExpired');
+        }
+      }, 1000);
     }
 
-    // Init
-    checkAuth().then(ok => { if (ok) fetchKeys(); });
+    function updateCountdownDisplay() {
+      const mins = Math.floor(remainingSeconds / 60);
+      const secs = remainingSeconds % 60;
+      const str = `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+      document.getElementById('countdownClock').innerText = str;
+
+      const pct = (remainingSeconds / 600) * 100;
+      const bar = document.getElementById('countdownProgress');
+      bar.style.width = pct + '%';
+      if (pct < 25) {
+        bar.className = 'bg-red-600 h-full transition-all duration-1000';
+      } else if (pct < 50) {
+        bar.className = 'bg-orange-500 h-full transition-all duration-1000';
+      } else {
+        bar.className = 'bg-amber-600 h-full transition-all duration-1000';
+      }
+    }
+
+    async function confirmPaymentDone() {
+      const btn = document.getElementById('btnConfirmPaid');
+      btn.disabled = true;
+      btn.innerText = 'Đang xác nhận...';
+
+      try {
+        await fetch('/api/orders/confirm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: currentOrder.OrderId })
+        });
+      } catch (e) { }
+
+      if (countdownInterval) clearInterval(countdownInterval);
+      showSuccessScreen();
+    }
+
+    function showSuccessScreen() {
+      document.getElementById('successOrderId').innerText = currentOrder.OrderId;
+      document.getElementById('successPlanName').innerText = currentPlan.planName;
+      document.getElementById('successEmail').innerText = currentOrder.Email;
+      showModalStep('stepSuccess');
+    }
+
+    function retryCheckout() {
+      showModalStep('stepForm');
+    }
+
+    function cancelCurrentOrder() {
+      if (countdownInterval) clearInterval(countdownInterval);
+      closeCheckout();
+    }
+
+    function copyText(val, btn) {
+      navigator.clipboard.writeText(val);
+      const old = btn.innerText;
+      btn.innerText = '✓ Đã chép';
+      setTimeout(() => { btn.innerText = old; }, 1500);
+    }
   </script>
 </body>
 </html>

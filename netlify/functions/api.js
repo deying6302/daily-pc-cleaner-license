@@ -29,6 +29,15 @@ let memoryKeys = initialSeed.length > 0 ? initialSeed : [
 // Active admin session tokens (In production, JWT or Netlify Blobs can be used)
 const activeTokens = new Set();
 
+// Memory fallbacks
+let memoryOrders = [];
+let memoryBankConfig = {
+  bankId: 'MB',
+  bankName: 'MB Bank (Ngân hàng Quân Đội)',
+  accountNo: '0987654321',
+  accountName: 'DAILY PC CLEANER'
+};
+
 // ==================== CRYPTO HELPERS (C# PARITY) ====================
 function computeHmac(data) {
   return crypto.createHmac('sha256', Buffer.from(SECRET_SALT, 'utf8')).update(Buffer.from(data, 'utf8')).digest('base64');
@@ -121,6 +130,51 @@ async function saveKeys(keys) {
       });
     } catch (e) { }
   }
+}
+
+// ==================== ORDERS & BANK STORAGE ====================
+async function loadOrders() {
+  try {
+    const { getStore } = require('@netlify/blobs');
+    const store = getStore('license-keys');
+    const data = await store.get('orders_db', { type: 'json' });
+    if (data && Array.isArray(data)) {
+      memoryOrders = data;
+      return memoryOrders;
+    }
+  } catch (e) { }
+  return memoryOrders;
+}
+
+async function saveOrders(orders) {
+  memoryOrders = orders;
+  try {
+    const { getStore } = require('@netlify/blobs');
+    const store = getStore('license-keys');
+    await store.setJSON('orders_db', orders);
+  } catch (e) { }
+}
+
+async function loadBankConfig() {
+  try {
+    const { getStore } = require('@netlify/blobs');
+    const store = getStore('license-keys');
+    const data = await store.get('bank_config', { type: 'json' });
+    if (data && data.accountNo) {
+      memoryBankConfig = data;
+      return memoryBankConfig;
+    }
+  } catch (e) { }
+  return memoryBankConfig;
+}
+
+async function saveBankConfig(config) {
+  memoryBankConfig = config;
+  try {
+    const { getStore } = require('@netlify/blobs');
+    const store = getStore('license-keys');
+    await store.setJSON('bank_config', config);
+  } catch (e) { }
 }
 
 // ==================== AUTH HELPER ====================
@@ -254,6 +308,114 @@ exports.handler = async function (event) {
     };
   }
 
+  // ---------------- PUBLIC ORDERS & BANK APIs ----------------
+  // GET /api/config/bank
+  if (path === '/api/config/bank' && event.httpMethod === 'GET') {
+    const bank = await loadBankConfig();
+    return { statusCode: 200, headers, body: JSON.stringify({ success: true, bank }) };
+  }
+
+  // POST /api/orders/create
+  if (path === '/api/orders/create' && event.httpMethod === 'POST') {
+    const email = (body.email || '').trim().toLowerCase();
+    const planId = (body.planId || '').trim();
+    const planName = (body.planName || '').trim();
+    const price = parseInt(body.price, 10) || 0;
+    const customerName = (body.customerName || '').trim() || email.split('@')[0];
+    const phone = (body.phone || '').trim();
+
+    if (!email || !email.includes('@')) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ success: false, error: 'Vui lòng cung cấp địa chỉ Email (Gmail) hợp lệ để nhận mã bản quyền!' })
+      };
+    }
+
+    const orders = await loadOrders();
+
+    // Limit free/trial plans to 1-time per email
+    if (planId === 'trial-1d' || planId === 'trial-3d') {
+      const existingTrial = orders.find(o => o.Email === email && (o.PlanId === 'trial-1d' || o.PlanId === 'trial-3d') && o.Status !== 'cancelled');
+      if (existingTrial) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({
+            success: false,
+            error: 'Email này đã từng đăng ký gói Dùng Thử. Mỗi khách hàng chỉ được dùng thử 1 lần duy nhất. Quý khách vui lòng chọn gói 30 ngày, 1 năm hoặc Vĩnh viễn!'
+          })
+        };
+      }
+    }
+
+    // Generate Order ID: DPCC-XXXX
+    const randCode = Math.floor(1000 + Math.random() * 9000);
+    const orderId = `DPCC-${randCode}`;
+    const now = new Date();
+    const createdAt = now.toISOString().replace('T', ' ').substring(0, 19);
+    // 15 minutes timeout
+    const expiresAt = new Date(now.getTime() + 15 * 60 * 1000).toISOString().replace('T', ' ').substring(0, 19);
+
+    const order = {
+      OrderId: orderId,
+      CustomerName: customerName,
+      Email: email,
+      Phone: phone,
+      PlanId: planId,
+      PlanName: planName,
+      Price: price,
+      Status: 'pending', // 'pending' | 'awaiting_approval' | 'completed' | 'cancelled'
+      CreatedAt: createdAt,
+      ExpiresAt: expiresAt,
+      AssignedKey: null
+    };
+
+    orders.unshift(order);
+    await saveOrders(orders);
+
+    const bank = await loadBankConfig();
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        success: true,
+        order,
+        bank
+      })
+    };
+  }
+
+  // POST /api/orders/confirm
+  if (path === '/api/orders/confirm' && event.httpMethod === 'POST') {
+    const orderId = (body.orderId || '').trim().toUpperCase();
+    const orders = await loadOrders();
+    const target = orders.find(o => o.OrderId.toUpperCase() === orderId);
+    if (!target) {
+      return { statusCode: 404, headers, body: JSON.stringify({ success: false, error: 'Đơn hàng không tồn tại!' }) };
+    }
+
+    if (target.Status === 'completed') {
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true, status: 'completed', assignedKey: target.AssignedKey }) };
+    }
+
+    target.Status = 'awaiting_approval';
+    target.PaidAt = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    await saveOrders(orders);
+
+    return { statusCode: 200, headers, body: JSON.stringify({ success: true, status: target.Status }) };
+  }
+
+  // GET /api/orders/status
+  if (path.startsWith('/api/orders/status') && event.httpMethod === 'GET') {
+    const orderId = (event.queryStringParameters && event.queryStringParameters.id ? event.queryStringParameters.id : '').trim().toUpperCase();
+    const orders = await loadOrders();
+    const target = orders.find(o => o.OrderId.toUpperCase() === orderId);
+    if (!target) return { statusCode: 404, headers, body: JSON.stringify({ success: false, error: 'Không tìm thấy đơn hàng' }) };
+    return { statusCode: 200, headers, body: JSON.stringify({ success: true, order: target }) };
+  }
+
   // ---------------- ADMIN API: /api/login ----------------
   if (path === '/api/login' && event.httpMethod === 'POST') {
     const { username, password } = body;
@@ -366,6 +528,118 @@ exports.handler = async function (event) {
     const token = encryptString(raw);
 
     return { statusCode: 200, headers, body: JSON.stringify({ success: true, offlineToken: token }) };
+  }
+
+  // ---------------- PROTECTED ORDERS & BANK APIs ----------------
+  // GET /api/orders
+  if (path === '/api/orders' && event.httpMethod === 'GET') {
+    const orders = await loadOrders();
+    return { statusCode: 200, headers, body: JSON.stringify({ success: true, orders }) };
+  }
+
+  // POST /api/orders/approve
+  if (path === '/api/orders/approve' && event.httpMethod === 'POST') {
+    const orderId = (body.orderId || '').trim().toUpperCase();
+    const orders = await loadOrders();
+    const order = orders.find(o => o.OrderId.toUpperCase() === orderId);
+    if (!order) return { statusCode: 404, headers, body: JSON.stringify({ success: false, error: 'Không tìm thấy đơn hàng!' }) };
+
+    // Determine plan properties
+    let days = 30;
+    let maxActivations = 1;
+    let planType = 'Gói 30 ngày';
+
+    if (order.PlanId === 'trial-1d') {
+      days = 1;
+      maxActivations = 1;
+      planType = 'Dùng thử 1 ngày';
+    } else if (order.PlanId === 'trial-3d') {
+      days = 3;
+      maxActivations = 1;
+      planType = 'Dùng thử 3 ngày';
+    } else if (order.PlanId === 'monthly-30d') {
+      days = 30;
+      maxActivations = 1;
+      planType = 'Gói 30 ngày';
+    } else if (order.PlanId === 'yearly-365d') {
+      days = 365;
+      maxActivations = 2;
+      planType = 'Gói 1 năm';
+    } else if (order.PlanId === 'lifetime') {
+      days = 0;
+      maxActivations = 5;
+      planType = 'Vĩnh viễn';
+    }
+
+    const rawRnd = crypto.randomBytes(6).toString('hex').toUpperCase();
+    const k1 = rawRnd.substring(0, 4);
+    const k2 = rawRnd.substring(4, 8);
+    const k3 = rawRnd.substring(8, 12);
+    const key = `PRO-${k1}-${k2}-${k3}`;
+
+    const now = new Date();
+    const createdAt = now.toISOString().replace('T', ' ').substring(0, 19);
+    let expiresAt = null;
+    const isLifetime = planType === 'Vĩnh viễn' || days === 0;
+    if (!isLifetime && days > 0) {
+      const exp = new Date(now.getTime() + days * 24 * 3600 * 1000);
+      expiresAt = exp.toISOString().replace('T', ' ').substring(0, 19);
+    }
+
+    const newKeyRecord = {
+      Key: key,
+      CustomerName: order.CustomerName || order.Email,
+      PlanType: planType,
+      DaysValid: isLifetime ? 0 : days,
+      CreatedAt: createdAt,
+      ExpiresAt: expiresAt,
+      MaxActivations: maxActivations,
+      Notes: `Đơn hàng ${order.OrderId} (${order.Email})`,
+      IsRevoked: false,
+      ActivatedMachines: []
+    };
+
+    keys.unshift(newKeyRecord);
+    await saveKeys(keys);
+
+    order.Status = 'completed';
+    order.AssignedKey = key;
+    order.CompletedAt = createdAt;
+    await saveOrders(orders);
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        success: true,
+        key,
+        order
+      })
+    };
+  }
+
+  // POST /api/orders/delete
+  if (path === '/api/orders/delete' && event.httpMethod === 'POST') {
+    const orderId = (body.orderId || '').trim().toUpperCase();
+    const orders = await loadOrders();
+    const idx = orders.findIndex(o => o.OrderId.toUpperCase() === orderId);
+    if (idx === -1) return { statusCode: 404, headers, body: JSON.stringify({ success: false, error: 'Đơn hàng không tồn tại' }) };
+    orders.splice(idx, 1);
+    await saveOrders(orders);
+    return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+  }
+
+  // POST /api/config/bank
+  if (path === '/api/config/bank' && event.httpMethod === 'POST') {
+    const { bankId, bankName, accountNo, accountName } = body;
+    const config = {
+      bankId: (bankId || 'MB').trim(),
+      bankName: (bankName || 'MB Bank').trim(),
+      accountNo: (accountNo || '').trim(),
+      accountName: (accountName || '').trim().toUpperCase()
+    };
+    await saveBankConfig(config);
+    return { statusCode: 200, headers, body: JSON.stringify({ success: true, bank: config }) };
   }
 
   return { statusCode: 404, headers, body: JSON.stringify({ error: 'Endpoint không tồn tại' }) };

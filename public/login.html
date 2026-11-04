@@ -79,7 +79,7 @@
         const data = await res.json();
         if (data.success && data.token) {
           localStorage.setItem('admin_token', data.token);
-          window.location.href = '/index.html';
+          window.location.href = '/admin.html';
         } else {
           document.getElementById('errorMessage').innerText = data.error || 'Đăng nhập không thành công!';
           errorAlert.classList.remove('hidden');
