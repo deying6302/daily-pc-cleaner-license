@@ -41,6 +41,11 @@
           class="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-100 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer">
           <span>🔒</span> Đổi Mật Khẩu
         </button>
+        <button onclick="openVersionModal()" title="Quản lý và phát hành bản cập nhật cho Daily PC Cleaner"
+          class="px-3 py-1.5 rounded-lg border border-teal-300 text-teal-800 bg-teal-50/70 hover:bg-teal-100 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+          <span>🚀</span> Cập Nhật App
+        </button>
+
         <div id="syncBadge" title="Hệ thống tự động đồng bộ thời gian thực mỗi 6s"
           class="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -451,7 +456,58 @@
     </div>
   </div>
 
-  <!-- MODAL: SEND EMAIL TO CUSTOMER -->
+  
+
+  <!-- MODAL: APP VERSION (AUTO-UPDATE) -->
+  <div id="versionModal" class="hidden fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+        <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+          <span>🚀</span> Quản Lý Phiên Bản Ứng Dụng (Auto-Update)
+        </h3>
+        <button onclick="closeVersionModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">✕</button>
+      </div>
+
+      <form onsubmit="handleSaveVersion(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Phiên bản mới nhất (Latest Version)</label>
+          <input type="text" id="appVersionInput" required pattern="^[0-9]+(\.[0-9]+)+$"
+            class="w-full px-3 py-2 border rounded-xl text-sm font-mono font-bold text-teal-800" placeholder="1.0.1">
+          <p class="text-[11px] text-slate-400 mt-1">Định dạng số: x.y.z (Ví dụ: 1.0.1). Khi bạn tăng số này, toàn bộ tool của khách đang dùng sẽ tự động nhận thông báo cập nhật.</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Link tải file .EXE trực tiếp (Download URL)</label>
+          <input type="url" id="appDownloadUrlInput" required
+            class="w-full px-3 py-2 border rounded-xl text-sm font-mono" placeholder="https://daily-pc-cleaner.netlify.app/DailyPCCleaner.exe">
+          <p class="text-[11px] text-slate-400 mt-1">Mặc định: file DailyPCCleaner.exe trên Netlify. Bạn cũng có thể dùng link GitHub Release hoặc Google Drive trực tiếp.</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Nội dung cập nhật (Release Notes)</label>
+          <textarea id="appReleaseNotesInput" rows="4" required
+            class="w-full px-3 py-2 border rounded-xl text-sm" placeholder="• Bổ sung tính năng tự động dọn rác chuyên sâu&#10;• Tối ưu tốc độ giải phóng RAM thông minh&#10;• Nâng cấp giao diện trực quan"></textarea>
+        </div>
+
+        <div class="flex items-center gap-2 pt-1">
+          <input type="checkbox" id="appMandatoryInput" class="rounded text-teal-700 w-4 h-4 cursor-pointer">
+          <label for="appMandatoryInput" class="text-xs font-medium text-slate-700 cursor-pointer">
+            Bắt buộc cập nhật (Khách phải cập nhật mới được tiếp tục sử dụng tool)
+          </label>
+        </div>
+
+        <div class="pt-2 flex justify-end gap-2">
+          <button type="button" onclick="closeVersionModal()"
+            class="px-4 py-2 rounded-xl border border-slate-300 text-slate-600 text-xs font-semibold">Hủy</button>
+          <button type="submit" id="btnSubmitVersion"
+            class="px-4 py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold shadow-xs">
+            Lưu & Phát Hành Bản Mới
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+<!-- MODAL: SEND EMAIL TO CUSTOMER -->
   <div id="sendEmailModal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200">
       <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
@@ -1227,6 +1283,61 @@ Website: https://daily-pc-cleaner.netlify.app/`;
     }
 
     // Change password
+    
+    // ==================== APP VERSION (AUTO-UPDATE) ====================
+    async function openVersionModal() {
+      try {
+        const res = await fetch('/api/admin/version', { credentials: 'include' });
+        const data = await res.json();
+        if (data.success && data.version) {
+          document.getElementById('appVersionInput').value = data.version.version || '1.0.0';
+          document.getElementById('appDownloadUrlInput').value = data.version.downloadUrl || 'https://daily-pc-cleaner.netlify.app/DailyPCCleaner.exe';
+          document.getElementById('appReleaseNotesInput').value = data.version.releaseNotes || '';
+          document.getElementById('appMandatoryInput').checked = !!data.version.mandatory;
+        }
+      } catch (e) {
+        console.error('Fetch version error:', e);
+      }
+      document.getElementById('versionModal').classList.remove('hidden');
+    }
+
+    function closeVersionModal() {
+      document.getElementById('versionModal').classList.add('hidden');
+    }
+
+    async function handleSaveVersion(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnSubmitVersion');
+      btn.disabled = true;
+      btn.innerText = 'Đang lưu...';
+      try {
+        const payload = {
+          version: document.getElementById('appVersionInput').value.trim(),
+          downloadUrl: document.getElementById('appDownloadUrlInput').value.trim(),
+          releaseNotes: document.getElementById('appReleaseNotesInput').value.trim(),
+          mandatory: document.getElementById('appMandatoryInput').checked
+        };
+        const res = await fetch('/api/admin/version', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('🎉 Đã phát hành phiên bản v' + payload.version + ' thành công!\nCác máy khách mở tool sẽ tự động nhận được thông báo cập nhật.');
+          closeVersionModal();
+        } else {
+          alert('Lỗi: ' + (data.error || 'Không thể lưu thông tin phiên bản'));
+        }
+      } catch (err) {
+        alert('Lỗi kết nối máy chủ: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Lưu & Phát Hành Bản Mới';
+      }
+    }
+
     function openChangePwdModal() {
       document.getElementById('changePwdModal').classList.remove('hidden');
     }

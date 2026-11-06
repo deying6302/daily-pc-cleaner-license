@@ -289,6 +289,48 @@ async function saveAdminAuth(auth) {
   }
 }
 
+// ==================== APP VERSION HELPERS ====================
+let memoryAppVersion = {
+  version: '1.0.0',
+  releaseNotes: 'Phiên bản khởi tạo chính thức của Daily PC Cleaner Pro.',
+  downloadUrl: 'https://daily-pc-cleaner.netlify.app/DailyPCCleaner.exe',
+  mandatory: false,
+  publishedAt: '2026-11-06T00:00:00.000Z'
+};
+
+async function loadAppVersion() {
+  try {
+    const store = getDbStore('license-keys');
+    if (store) {
+      const data = await store.get('app_version', { type: 'json' });
+      if (data && data.version) {
+        memoryAppVersion = { ...memoryAppVersion, ...data };
+        return memoryAppVersion;
+      }
+    }
+  } catch (e) {
+    console.error('loadAppVersion error:', e);
+  }
+  return memoryAppVersion;
+}
+
+async function saveAppVersion(config) {
+  memoryAppVersion = {
+    ...memoryAppVersion,
+    ...config,
+    publishedAt: new Date().toISOString()
+  };
+  try {
+    const store = getDbStore('license-keys');
+    if (store) {
+      await store.setJSON('app_version', memoryAppVersion);
+    }
+  } catch (e) {
+    console.error('saveAppVersion error:', e);
+  }
+  return memoryAppVersion;
+}
+
 // ==================== STATELESS TOKEN HELPERS (HMAC-SHA256) ====================
 function createAdminToken(username) {
   const payload = {
@@ -636,6 +678,19 @@ export default async (req, context) => {
     return jsonResponse({ success: true, order: target });
   }
 
+  // GET /api/version (Public API for tool auto-update check)
+  if (path === '/api/version' && method === 'GET') {
+    const v = await loadAppVersion();
+    return jsonResponse({
+      success: true,
+      version: v.version,
+      releaseNotes: v.releaseNotes,
+      downloadUrl: v.downloadUrl,
+      mandatory: !!v.mandatory,
+      publishedAt: v.publishedAt
+    });
+  }
+
   // ---------------- ADMIN API: /api/login ----------------
   if (path === '/api/login' && method === 'POST') {
     const { username, password } = body;
@@ -933,6 +988,27 @@ export default async (req, context) => {
     };
     await saveAdminAuth(updated);
     return jsonResponse({ success: true, message: 'Đã đổi mật khẩu thành công!' });
+  }
+
+  // GET /api/admin/version
+  if (path === '/api/admin/version' && method === 'GET') {
+    const v = await loadAppVersion();
+    return jsonResponse({ success: true, version: v });
+  }
+
+  // POST /api/admin/version
+  if (path === '/api/admin/version' && method === 'POST') {
+    const { version, releaseNotes, downloadUrl, mandatory } = body;
+    if (!version || !version.trim()) {
+      return jsonResponse({ success: false, error: 'Vui lòng nhập số phiên bản (Ví dụ: 1.0.1)' }, 400);
+    }
+    const updated = await saveAppVersion({
+      version: version.trim(),
+      releaseNotes: (releaseNotes || '').trim(),
+      downloadUrl: (downloadUrl || '').trim() || 'https://daily-pc-cleaner.netlify.app/DailyPCCleaner.exe',
+      mandatory: !!mandatory
+    });
+    return jsonResponse({ success: true, message: 'Đã phát hành phiên bản thành công!', version: updated });
   }
 
   return jsonResponse({ error: 'Endpoint không tồn tại' }, 404);
